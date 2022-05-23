@@ -1,69 +1,70 @@
 import datetime
-from json import dump
 from operator import itemgetter
 from hashlib import md5
 
+from .utils import months
 
-def download(base_dir, api, peer_id):
-    # from json import load
-    # with open(f'{peer_id}.json') as file:
-    #     return load(file)
 
+def download(base_dir, api, peer_id, peer):
     with open(f'{base_dir}/vkscripts/save.js', 'r') as file:
-        code_template = file.read()
+        code_tpl = file.read()
 
-    code = code_template \
+    code = code_tpl \
         .replace('PEERID', peer_id) \
         .replace('PROCESSED', '0')
 
-    response = api.execute(code=code)
-    messages = response['messages']
+    res = api.execute(code=code)
+    msgs = res['messages']
 
-    while response['processed'] < response['count']:
-        code = code_template \
+    while res['processed'] < res['count']:
+        code = code_tpl \
             .replace('PEERID', peer_id) \
-            .replace('PROCESSED', response['processed'])
+            .replace('PROCESSED', res['processed'])
 
-        response = api.execute(code=code)
-        messages += response['messages']
+        res = api.execute(code=code)
+        msgs += res['messages']
 
-    with open(f'{peer_id}.json', 'w') as file:
-        dump(messages, file, indent=2)
+    msgs.reverse()
+    peer['messages'] = msgs
 
-    return messages
+
+def parse(peer_id, peer, usernames):
+    _msgs.clear()
+    return [gen_message(msg, usernames) for msg in peer['messages']]
+
+
+_msgs = {}
+
+
+def gen_message(json, usernames):
+    msg_id = Message.get_id_by_json(json)
+
+    if msg_id not in _msgs:
+        _msgs[msg_id] = Message(json, usernames)
+
+    return _msgs[msg_id]
 
 
 class Message:
-    _months = [
-        ' ', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-    ]
-
-    def __init__(self, json, users):
-        self.user = users[json['from_id']]
-
-        # self.id = f"{json['peer_id']}_{json['conversation_message_id']}"
-        # else:
-        self.id = f"{json['from_id']}_{json['conversation_message_id']}"
+    def __init__(self, json, usernames):
+        self.id = Message.get_id_by_json(json)
+        self.username = usernames[json['from_id']]
 
         self.date = datetime.datetime.fromtimestamp(json['date'])
         self.text = json['text']
 
-        self.fwd_msgs = [gen_message(fwd_msg_json, users) for fwd_msg_json in json.get('fwd_messages', [])]
+        self.fwd_msgs = [gen_message(fwd_msg_json, usernames) for fwd_msg_json in json.get('fwd_messages', [])]
         self.attachments = [get_attachment(at) for at in json['attachments']]
 
     @staticmethod
     def get_id_by_json(json):
-        return f"{json['from_id']}_{json['conversation_message_id']}"
+        return f"{json['date']}_{json['from_id']}_{json['conversation_message_id']}"
 
     def full_date(self):
-        return self.date.strftime('%d {month} %Y'.format(month=self._months[self.date.month]))
+        return self.date.strftime('%d {month} %Y'.format(month=months[self.date.month]))
 
     def time(self):
         return self.date.strftime('%H:%M')
-
-
-parsed = {}
 
 
 class AttachmentPhoto:
@@ -82,6 +83,7 @@ class AttachmentWall:
     def __str__(self):
         return f"[пост: {self.url}]"
 
+
 class Attachment:
     def __init__(self, json):
         pass
@@ -98,21 +100,3 @@ _attachments = {
 
 def get_attachment(json):
     return _attachments.get(json['type'], Attachment)(json[json['type']])
-
-
-def gen_message(json, all_users):
-    msg_id = Message.get_id_by_json(json)
-
-    if msg_id not in parsed:
-        parsed[msg_id] = Message(json, all_users)
-
-    return parsed[msg_id]
-
-
-def parse(peer_json, all_users):
-    msgs = []
-
-    for msg in reversed(peer_json):
-        msgs.append(gen_message(msg, all_users))
-
-    return parsed, msgs

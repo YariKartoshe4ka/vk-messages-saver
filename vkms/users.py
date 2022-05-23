@@ -1,16 +1,14 @@
 from collections import deque
-from json import dump
 
 
-def download(base_dir, api, peer_json):
-    # from json import load
-    # with open('users.json') as file:
-    #     return load(file)
-
+def download(base_dir, api, peer_id, peer):
     user_ids = set()
     group_ids = set()
 
-    queue = deque(peer_json)
+    queue = deque(peer['messages'])
+
+    if int(peer_id) < 2000000000:
+        queue.append({'from_id': int(peer_id)})
 
     while queue:
         msg = queue.popleft()
@@ -34,33 +32,16 @@ def download(base_dir, api, peer_json):
     if group_ids:
         res['groups'].extend(api.groups.getById(group_ids=','.join(group_ids)))
 
-    with open('users.json', 'w') as file:
-        dump(res, file, indent=2)
-
-    return res
+    peer['members'] = res
 
 
-class User:
-    def __init__(self, json):
-        self.id = json['id']
-        self.name = json['first_name'] + ' ' + json['last_name']
-
-
-class Group:
-    def __init__(self, json):
-        self.id = -json['id']
-        self.name = json['name']
-
-
-def parse(users_json):
+def parse(peer):
     users = {}
 
-    for json in users_json['users']:
-        user = User(json)
-        users[user.id] = user
+    for json in peer['members']['users']:
+        users[json['id']] = json['first_name'] + ' ' + json['last_name']
 
-    for json in users_json['groups']:
-        user = Group(json)
-        users[user.id] = user
+    for json in peer['members']['groups']:
+        users[-json['id']] = json['name']
 
     return users
