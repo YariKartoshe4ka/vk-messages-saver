@@ -1,4 +1,4 @@
-from . import messages, users, saver
+from . import messages, saver, users
 from .utils import dump_peer, load_peer
 
 
@@ -20,7 +20,7 @@ def _parse(out_dir, peer_id):
     peer = load_peer(out_dir, peer_id)
     usernames = users.parse(peer)
 
-    return messages.parse(peer_id, peer, usernames)
+    return messages.parse(peer, usernames)
 
 
 def parse(out_dir, peer_id, fmt):

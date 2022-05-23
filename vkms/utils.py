@@ -1,5 +1,4 @@
-from json import load, dump
-
+from json import dump, load
 
 months = [
     ' ', 'января', 'февраля', 'марта',

@@ -1,7 +1,7 @@
 import datetime
 
-from .utils import months
 from .attachments import gen_attachment
+from .utils import months
 
 
 def download(base_dir, api, peer_id, peer):
@@ -27,7 +27,7 @@ def download(base_dir, api, peer_id, peer):
     peer['messages'] = msgs
 
 
-def parse(peer_id, peer, usernames):
+def parse(peer, usernames):
     _msgs.clear()
     return [gen_message(msg, usernames) for msg in peer['messages']]
 
@@ -52,15 +52,25 @@ class Message:
         self.date = datetime.datetime.fromtimestamp(json['date'])
         self.text = json['text']
 
-        self.fwd_msgs = [gen_message(fwd_msg_json, usernames) for fwd_msg_json in json.get('fwd_messages', [])]
-        self.attachments = [gen_attachment(at_json) for at_json in json['attachments']]
+        self.fwd_msgs = [
+            gen_message(fwd_msg_json, usernames)
+            for fwd_msg_json in json.get('fwd_messages', [])
+        ]
+        self.attachments = [
+            gen_attachment(at_json)
+            for at_json in json['attachments']
+        ]
 
     @staticmethod
     def get_id_by_json(json):
-        return f"{json['date']}_{json['from_id']}_{json['conversation_message_id']}"
+        return '_'.join(map(str, (
+            json['date'],
+            json['from_id'],
+            json['conversation_message_id']
+        )))
 
     def full_date(self):
-        return self.date.strftime('%d {month} %Y'.format(month=months[self.date.month]))
+        return self.date.strftime('%d {} %Y'.format(months[self.date.month]))
 
     def time(self):
         return self.date.strftime('%H:%M')

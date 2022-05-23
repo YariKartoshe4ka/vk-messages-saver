@@ -24,19 +24,17 @@ def convert_txt(msgs):
         for at in msg.attachments:
             text.append(str(at))
 
-        if prev_msg is not None and prev_msg.username == msg.username:
-            for line in text:
-                if line == text[0]:
-                    buf += f"[{msg.time()}] {' ' * len(msg.username)}  {line}\n"
+        for line in text:
+            if line == text[0]:
+                if prev_msg and prev_msg.username == msg.username:
+                    username = ' ' * len(msg.username)
                 else:
-                    buf += f"{' ' * 7} {' ' * len(msg.username)}  {line}\n"
+                    username = msg.username
 
-        else:
-            for line in text:
-                if line == text[0]:
-                    buf += f"[{msg.time()}] {msg.username}: {line}\n"
-                else:
-                    buf += f"{' ' * 7} {' ' * len(msg.username)}  {line}\n"
+                buf += f"[{msg.time()}] {username}  {line}\n"
+
+            else:
+                buf += f"{' ' * 7} {' ' * len(msg.username)}  {line}\n"
 
         prev_msg = msg
 

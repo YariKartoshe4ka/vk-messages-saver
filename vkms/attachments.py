@@ -22,14 +22,8 @@ class AttachmentWall:
 class Attachment:
     url = None
 
-    def __init__(self, json):
-        pass
-
     def __str__(self):
         return '{unknown attachment}'
-
-    def download(self, out_dir):
-        pass
 
 
 _attachments = {

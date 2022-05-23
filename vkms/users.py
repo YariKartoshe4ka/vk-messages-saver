@@ -1,7 +1,7 @@
 from collections import deque
 
 
-def download(base_dir, api, peer_id, peer):
+def download(api, peer_id, peer):
     user_ids = set()
     group_ids = set()
 
