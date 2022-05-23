@@ -5,7 +5,7 @@ from .utils import months
 
 
 def download(base_dir, api, peer_id, peer):
-    with open(f'{base_dir}/vkscripts/save.js', 'r') as file:
+    with open(f'{base_dir}/vkscripts/messages.js', 'r') as file:
         code_tpl = file.read()
 
     code = code_tpl \
@@ -56,9 +56,9 @@ class Message:
             gen_message(fwd_msg_json, usernames)
             for fwd_msg_json in json.get('fwd_messages', [])
         ]
-        self.attachments = [
-            gen_attachment(at_json)
-            for at_json in json['attachments']
+        self.atchs = [
+            gen_attachment(atch_json)
+            for atch_json in json['attachments']
         ]
 
     @staticmethod

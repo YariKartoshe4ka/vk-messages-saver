@@ -1,4 +1,4 @@
-from . import messages, saver, users
+from . import attachments, messages, saver, users
 from .utils import dump_peer, load_peer
 
 
@@ -11,7 +11,7 @@ def dump(base_dir, out_dir, api, peer_id):
     peer = {}
 
     messages.download(base_dir, api, peer_id, peer)
-    users.download(base_dir, api, peer_id, peer)
+    users.download(api, peer_id, peer)
 
     dump_peer(out_dir, peer_id, peer)
 
@@ -26,3 +26,8 @@ def _parse(out_dir, peer_id):
 def parse(out_dir, peer_id, fmt):
     msgs = _parse(out_dir, peer_id)
     saver.save(out_dir, peer_id, fmt, msgs)
+
+
+def atch(out_dir, peer_id):
+    msgs = _parse(out_dir, peer_id)
+    attachments.download(out_dir, msgs)

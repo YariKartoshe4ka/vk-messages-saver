@@ -24,3 +24,6 @@ def main():
 
     elif args.action == 'parse':
         actions.parse(args.out_dir, args.peer_id, args.fmt)
+
+    elif args.action == 'atch':
+        actions.atch(args.out_dir, args.peer_id)

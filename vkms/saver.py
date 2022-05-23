@@ -21,8 +21,15 @@ def convert_txt(msgs):
         for line in filter(None, convert_txt(msg.fwd_msgs).split('\n')):
             text.append('| ' + line)
 
-        for at in msg.attachments:
-            text.append(str(at))
+        for atch in msg.atchs:
+            if atch.tp == 'photo':
+                text.append(f'[фото: {atch.hash}]')
+            elif atch.tp == 'audio_message':
+                text.append(f'[голосвое сообщение: {atch.hash}]')
+            elif atch.tp == 'wall':
+                text.append(f'[пост: {atch.url}]')
+            else:
+                text.append('{uknown attachment}')
 
         for line in text:
             if line == text[0]:

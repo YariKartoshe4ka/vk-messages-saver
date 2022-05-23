@@ -46,7 +46,7 @@ def parse_args():
         help='Convert machine-friendly JSON format to human-readable'
     )
     subparsers.add_parser(
-        'atсh',
+        'atch',
         help='Download messages attachments (photos, audio, etc.)'
     )
 
