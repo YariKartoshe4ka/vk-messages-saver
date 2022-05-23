@@ -1,9 +1,11 @@
-def convert(msgs):
+from os import makedirs
+
+
+def convert_txt(msgs):
     buf = ''
     prev_msg = None
 
     for msg in msgs:
-        print(msg.username)
         if prev_msg is None:
             buf += f'        [{msg.full_date()}]\n'
 
@@ -16,7 +18,7 @@ def convert(msgs):
         if msg.text:
             text.append(msg.text)
 
-        for line in filter(None, convert(msg.fwd_msgs).split('\n')):
+        for line in filter(None, convert_txt(msg.fwd_msgs).split('\n')):
             text.append('| ' + line)
 
         for at in msg.attachments:
@@ -42,5 +44,9 @@ def convert(msgs):
 
 
 def save(out_dir, peer_id, fmt, msgs):
-    with open(f'{out_dir}/{peer_id}.txt', 'w') as file:
-        file.write(convert(msgs))
+    makedirs(f'{out_dir}/{fmt}/', exist_ok=True)
+
+    converter = globals()['convert_' + fmt]
+
+    with open(f'{out_dir}/{fmt}/{peer_id}.{fmt}', 'w') as file:
+        file.write(converter(msgs))

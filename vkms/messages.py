@@ -1,8 +1,7 @@
 import datetime
-from operator import itemgetter
-from hashlib import md5
 
 from .utils import months
+from .attachments import gen_attachment
 
 
 def download(base_dir, api, peer_id, peer):
@@ -54,7 +53,7 @@ class Message:
         self.text = json['text']
 
         self.fwd_msgs = [gen_message(fwd_msg_json, usernames) for fwd_msg_json in json.get('fwd_messages', [])]
-        self.attachments = [get_attachment(at) for at in json['attachments']]
+        self.attachments = [gen_attachment(at_json) for at_json in json['attachments']]
 
     @staticmethod
     def get_id_by_json(json):
@@ -65,38 +64,3 @@ class Message:
 
     def time(self):
         return self.date.strftime('%H:%M')
-
-
-class AttachmentPhoto:
-    def __init__(self, json):
-        json['sizes'].sort(key=itemgetter('width', 'height'))
-        self.url = json['sizes'][-1]['url']
-
-    def __str__(self):
-        return f"[фото: {md5(self.url.encode('utf-8')).hexdigest()}]"
-
-
-class AttachmentWall:
-    def __init__(self, json):
-        self.url = f"vk.com/wall{json['from_id']}_{json['id']}"
-
-    def __str__(self):
-        return f"[пост: {self.url}]"
-
-
-class Attachment:
-    def __init__(self, json):
-        pass
-
-    def __str__(self):
-        return '{unknown attachment}'
-
-
-_attachments = {
-    'photo': AttachmentPhoto,
-    'wall': AttachmentWall
-}
-
-
-def get_attachment(json):
-    return _attachments.get(json['type'], Attachment)(json[json['type']])

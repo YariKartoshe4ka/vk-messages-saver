@@ -3,12 +3,11 @@ import os
 import vk
 
 from . import actions
-from .argparser import create_parser
+from .argparser import parse_args
 
 
 def main():
-    parser = create_parser()
-    args = parser.parse_args()
+    args = parse_args()
 
     os.makedirs(f'{args.out_dir}/.json/', exist_ok=True)
 

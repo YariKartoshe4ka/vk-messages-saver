@@ -1,14 +1,14 @@
 from argparse import ArgumentParser
 from pathlib import Path
+from os import getenv
 
 
-def create_parser():
+def parse_args():
     parser = ArgumentParser()
 
     parser.add_argument(
         '--token',
-        required=True,
-        help='Access token of an account with scope of messages'
+        help='Access token of an account with scope of messages. You also can pass it as an env variable ACCESS_TOKEN'
     )
     parser.add_argument(
         '--peer',
@@ -50,4 +50,13 @@ def create_parser():
         help='An easy-to-read format in which received messages must be converted. Supported formats: %(choices)s'
     )
 
-    return parser
+    args = parser.parse_args()
+
+    token = getenv('ACCESS_TOKEN') or args.token
+
+    if token is None:
+        parser.error('You must define token as an ACCESS_TOKEN env variable or using the --token argument')
+
+    args.token = token
+
+    return args
