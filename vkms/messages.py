@@ -56,6 +56,7 @@ def download(base_dir, api, peer_id, peer):
 #     member (str): Имя инициатора действия
 #     user (str): Имя пользователя, над которым выполняется действие
 #     text (str): Новое название беседы
+#     msg (str): Текст закрепленного сообщения
 #
 _actions: Dict[str, str] = {
     'chat_photo_update': '{member} обновил(-a) фотографию беседы',
@@ -64,6 +65,8 @@ _actions: Dict[str, str] = {
     'chat_title_update': '{member} изменил(-а) название беседы на "{text}"',
     'chat_invite_user': '{member} пригласил(-а) {user}',
     'chat_kick_user': '{member} исключил(-а) {user}',
+    'chat_pin_message': '{member} закрепил(-а) сообщение "{msg}"',
+    'chat_unpin_message': '{member} открепил(-а) сообщение',
     'chat_invite_user_by_link': '{member} присоединился(-ась) '
                                 'к беседе по ссылке',
     '_chat_leave_user': '{member} вышел(-а) из беседы'
@@ -102,10 +105,14 @@ class Message:
                 json['action']['type'] = '_chat_leave_user'
 
             # Генерация текста из шаблона
-            self.action = _actions[json['action']['type']].format(
+            self.action = _actions.get(
+                json['action']['type'],
+                'unknown action'
+            ).format(
                 user=usernames.get(json['action'].get('member_id')),
                 member=self.username,
-                text=json['action'].get('text')
+                text=json['action'].get('text'),
+                msg=json['action'].get('message')
             )
 
         # Текст сообщения (может быть пустым)
