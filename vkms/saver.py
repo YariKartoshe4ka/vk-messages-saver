@@ -15,6 +15,13 @@ def convert_txt(msgs):
 
         text = []
 
+        if msg.action:
+            text.append(f'[{msg.action}]')
+
+        if msg.reply_msg:
+            for line in filter(None, convert_txt([msg.reply_msg]).split('\n')):
+                text.append('> ' + line)
+
         if msg.text:
             text.append(msg.text)
 
@@ -34,11 +41,11 @@ def convert_txt(msgs):
         for line in text:
             if line == text[0]:
                 if prev_msg and prev_msg.username == msg.username:
-                    username = ' ' * len(msg.username)
+                    username = ' ' * (len(msg.username) + 1)
                 else:
-                    username = msg.username
+                    username = msg.username + ':'
 
-                buf += f"[{msg.time()}] {username}  {line}\n"
+                buf += f"[{msg.time()}] {username} {line}\n"
 
             else:
                 buf += f"{' ' * 7} {' ' * len(msg.username)}  {line}\n"

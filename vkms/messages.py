@@ -1,20 +1,39 @@
 import datetime
+from typing import Dict, List, Tuple
 
-from .attachments import gen_attachment
+from .attachments import Attachment, gen_attachment
 from .utils import months
 
 
 def download(base_dir, api, peer_id, peer):
+    """Загружает сообщения переписки. Для экономии обращений к методам VK API
+    используется execute и VKScirpt. В начале идут старые сообщения, в конце -
+    новые
+
+    Args:
+        base_dir (str): Абсолютный путь к каталогу, в котором находится файл
+            с основной точкой входа скрипта
+        api (vk.API): Объект, через который происходит обращение к
+            методам VK API
+        peer_id (int): Идентификатор переписки, сообщения которой
+            необходимо скачать
+        peer (dict): Объект (словарь) переписки, в который необходимо
+            сохранить скачанные сообщения
+    """
     with open(f'{base_dir}/vkscripts/messages.js', 'r') as file:
+        # Получаем шаблон кода VKScript
         code_tpl = file.read()
 
+    # Передаем идентификатор переписки и кол-во обработанных сообщений
     code = code_tpl \
         .replace('PEERID', peer_id) \
         .replace('PROCESSED', '0')
 
+    # Получаем часть сообщений
     res = api.execute(code=code)
     msgs = res['messages']
 
+    # Повторяем действия выше, пока все сообщения не будут загружены
     while res['processed'] < res['count']:
         code = code_tpl \
             .replace('PEERID', peer_id) \
@@ -23,54 +42,161 @@ def download(base_dir, api, peer_id, peer):
         res = api.execute(code=code)
         msgs += res['messages']
 
+    # Переворачиваем сообщения, чтобы в начале
+    # оказались старые, а в конце - новые
     msgs.reverse()
+
+    # Сохраняем сообщения
     peer['messages'] = msgs
 
 
-def parse(peer, usernames):
-    _msgs.clear()
-    return [gen_message(msg, usernames) for msg in peer['messages']]
-
-
-_msgs = {}
-
-
-def gen_message(json, usernames):
-    msg_id = Message.get_id_by_json(json)
-
-    if msg_id not in _msgs:
-        _msgs[msg_id] = Message(json, usernames)
-
-    return _msgs[msg_id]
+# Шаблоны текстов сервисных действий в формате тип-текст
+#
+# Args:
+#     member (str): Имя инициатора действия
+#     user (str): Имя пользователя, над которым выполняется действие
+#     text (str): Новое название беседы
+#
+_actions: Dict[str, str] = {
+    'chat_photo_update': '{member} обновил(-a) фотографию беседы',
+    'chat_photo_remove': '{member} удалил(-a) фотографию беседы',
+    'chat_create': '{member} создал(-а) беседу "{text}"',
+    'chat_title_update': '{member} изменил(-а) название беседы на "{text}"',
+    'chat_invite_user': '{member} пригласил(-а) {user}',
+    'chat_kick_user': '{member} исключил(-а) {user}',
+    'chat_invite_user_by_link': '{member} присоединился(-ась) '
+                                'к беседе по ссылке',
+    '_chat_leave_user': '{member} вышел(-а) из беседы'
+}
 
 
 class Message:
+    """Класс для представления объекта `message` из JSON
+    Документация: [https://dev.vk.com/reference/objects/message]
+
+    Args:
+        json (dict): Объект сообщения полученный ранее благодаря VK API
+        usernames (dict): Словарь для получения имени пользователя по его ID
+    """
+
     def __init__(self, json, usernames):
-        self.id = Message.get_id_by_json(json)
-        self.username = usernames[json['from_id']]
+        # Идентификатор сообщения. Вычисляется немного необычным путем, т.к.
+        # сообщения полученные из объектов `reply_message` и `fwd_messages`
+        # могут иметь другие поля ID
+        self.id: tuple = Message.get_id_by_json(json)
 
+        # Получение имени отправителя по его ID
+        self.username: str = usernames[json['from_id']]
+
+        # Получение времени отправления сообщения из формата Unixtime
         self.date = datetime.datetime.fromtimestamp(json['date'])
-        self.text = json['text']
 
-        self.fwd_msgs = [
+        # Информация о сервисном действии, `self.action` будет содержать
+        # уже готовый текст или `None`
+        self.action: str | None = None
+
+        if 'action' in json:
+            # Если пользователь исключил сам себя, значит он вышел из беседы
+            if (json['action']['type'] == 'chat_kick_user'
+                    and json['from_id'] == json['action']['member_id']):
+                json['action']['type'] = '_chat_leave_user'
+
+            # Генерация текста из шаблона
+            self.action = _actions[json['action']['type']].format(
+                user=usernames.get(json['action'].get('member_id')),
+                member=self.username,
+                text=json['action'].get('text')
+            )
+
+        # Текст сообщения (может быть пустым)
+        self.text: str = json['text']
+
+        # Объект сообщения, в ответ на которое было отправлено текущее
+        self.reply_msg: Message = None
+
+        if 'reply_message' in json:
+            self.reply_msg = gen_message(json['reply_message'], usernames)
+
+        # Список пересланных сообщений, вместе образуют дерево
+        self.fwd_msgs: List[Message] = [
             gen_message(fwd_msg_json, usernames)
             for fwd_msg_json in json.get('fwd_messages', [])
         ]
-        self.atchs = [
+
+        # Список медиавложений сообщения (фото, аудио и т.п.)
+        self.atchs: List[Attachment] = [
             gen_attachment(atch_json)
             for atch_json in json['attachments']
         ]
 
     @staticmethod
     def get_id_by_json(json):
-        return '_'.join(map(str, (
+        """Функция для получения идентификатора сообщения из JSON
+
+        Args:
+            json (dict): Объект сообщения полученный ранее благодаря VK API
+
+        Returns:
+            Tuple[int, int, int]: Идентификатор
+        """
+        return (
             json['date'],
             json['from_id'],
             json['conversation_message_id']
-        )))
+        )
 
     def full_date(self):
+        """Возвращает полную дату (день, месяц, год) отправки сообщения
+
+        Returns:
+            str: Полная дата
+        """
         return self.date.strftime('%d {} %Y'.format(months[self.date.month]))
 
     def time(self):
+        """Возвращает время (час, минута) отправки сообщения
+
+        Returns:
+            str: Время отправки
+        """
         return self.date.strftime('%H:%M')
+
+
+# Словарь для кеширования сообщений в формате id-сообщение
+_msgs: Dict[Tuple[int, int, int], Message] = {}
+
+
+def parse(peer, usernames):
+    """Парсит сообщения из JSON в объекты `Message` для дальнейшей работы
+
+    Args:
+        peer (dict): Объект (словарь) переписки, в который уже
+            были сохранены скачанные сообщения
+        usernames (dict): Словарь для получения имени пользователя по его ID
+
+    Returns:
+        List[Message]: Список объектов сообщений
+    """
+    # Очистка кеша сообщений
+    _msgs.clear()
+
+    # Генерация сообщений
+    return [
+        gen_message(msg, usernames)
+        for msg in peer['messages']
+    ]
+
+
+def gen_message(json, usernames):
+    """Генерирует и кеширует созданное сообщение по его ID
+
+    Args:
+        json (dict): Объект сообщения полученный ранее благодаря VK API
+        usernames (dict): Словарь для получения имени пользователя по его ID
+    """
+    msg_id = Message.get_id_by_json(json)
+
+    if msg_id not in _msgs:
+        _msgs[msg_id] = Message(json, usernames)
+
+    return _msgs[msg_id]
