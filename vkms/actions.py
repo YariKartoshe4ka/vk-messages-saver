@@ -11,7 +11,7 @@ def dump(base_dir, out_dir, api, peer_id):
     peer = {}
 
     messages.download(base_dir, api, peer_id, peer)
-    users.download(api, peer_id, peer)
+    users.download(api, peer)
 
     dump_peer(out_dir, peer_id, peer)
 
