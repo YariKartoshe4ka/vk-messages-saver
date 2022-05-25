@@ -2,11 +2,6 @@ from . import attachments, messages, saver, users
 from .utils import dump_peer, load_peer
 
 
-def full(base_dir, api, args):
-    dump(base_dir, args.out_dir, api, args.peer_id)
-    parse(args.out_dir, args.peer_id, args.fmt)
-
-
 def dump(base_dir, out_dir, api, peer_id):
     peer = {}
 

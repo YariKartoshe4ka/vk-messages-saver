@@ -16,10 +16,7 @@ def main():
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    if args.action == 'full':
-        actions.full(base_dir, api, args)
-
-    elif args.action == 'dump':
+    if args.action == 'dump':
         actions.dump(base_dir, args.out_dir, api, args.peer_id)
 
     elif args.action == 'parse':

@@ -1,4 +1,5 @@
 from os import makedirs
+from re import sub
 
 
 def save(out_dir, peer_id, fmt, msgs):
@@ -66,9 +67,12 @@ def convert_txt(msgs):
                     line=line
                 ))
 
-        # Добавляем текст самого сообщения (если есть)
+        # Добавляем текст самого сообщения (если есть), обрабатывая обращения
         if msg.text:
-            text.extend(msg.text.split('\n'))
+            text.extend([
+                sub(r'\[(?:club|id)\d+\|([^\]]+)\]', r'\1', line)
+                for line in msg.text.split('\n')
+            ])
 
         # Если есть пересланные сообщения, обрабатываем их рекурсивно
         for line in filter(None, convert_txt(msg.fwd_msgs).split('\n')):
@@ -84,6 +88,10 @@ def convert_txt(msgs):
                 text.append(f'[пост: {atch.url}]')
             else:
                 text.append('{uknown attachment}')
+
+        # Если сообщение было отредактировано, добавляем заметку
+        if msg.is_edited:
+            text.append('(ред.)')
 
         # Кэшируем полученный текст
         msg.text_parsed = text
