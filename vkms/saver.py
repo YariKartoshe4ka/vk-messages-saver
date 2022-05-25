@@ -81,11 +81,46 @@ def convert_txt(msgs):
         # Обрабатываем медиавложения
         for atch in msg.atchs:
             if atch.tp == 'photo':
-                text.append(f'[фото: {atch.hash}]')
-            elif atch.tp == 'audio_message':
-                text.append(f'[голосвое сообщение: {atch.hash}]')
+                text.append(f'[фото: {atch.filename}]')
+            elif atch.tp == 'video':
+                text.append(f'[видео: {atch.filename}]')
+            elif atch.tp == 'audio':
+                text.append(f'[аудио: {atch.title}]')
+            elif atch.tp == 'doc':
+                text.append(f'[документ: {atch.filename}]')
+            elif atch.tp == 'link':
+                text.append(f'[ссылка: {atch.title} ({atch.url})]')
             elif atch.tp == 'wall':
                 text.append(f'[пост: {atch.url}]')
+            elif atch.tp == 'wall_reply':
+                text.append(f'[комментарий: {atch.url}]')
+            elif atch.tp == 'sticker':
+                text.append(f'[стикер: {atch.filename}]')
+            elif atch.tp == 'gift':
+                text.append(f'[подарок: {atch.filename}]')
+            elif atch.tp == 'audio_message':
+                text.append(f'[голосвое сообщение: {atch.filename}]')
+            elif atch.tp == 'graffiti':
+                text.append(f'[граффити: {atch.filename}]')
+
+            elif atch.tp == 'poll':
+                pool_text = [f'[опрос: "{atch.title}", {atch.anon}, {atch.mult}]']
+                maxl = len(pool_text[0])
+
+                for ans in atch.answers:
+                    pool_text.append(
+                        '  ["{text}":{{indent}}{is_voted}{rate}% ({votes}/{all_votes})]'.format(
+                            text=ans['text'],
+                            is_voted='✓ ' if ans['id'] in atch.answer_ids else '',
+                            rate=round(ans['rate']),
+                            votes=ans['votes'],
+                            all_votes=atch.all_votes
+                        )
+                    )
+                    maxl = max(maxl, len(pool_text[-1]) - len('{indent}'))
+
+                for line in pool_text:
+                    text.append(line.format(indent=' ' * (maxl - len(line) + len('{indent}'))))
             else:
                 text.append('{uknown attachment}')
 
