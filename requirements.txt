@@ -1,4 +1,4 @@
+git+https://github.com/f213/vk
 pathvalidate<3,>=2.5
 requests<3,>=2.24
 urllib3
-vk<3,>=2

@@ -2,21 +2,12 @@ from argparse import ArgumentParser
 from os import getenv
 from pathlib import Path
 
+from .utils import parse_peer_ids
+
 
 def parse_args():
     parser = ArgumentParser()
 
-    parser.add_argument(
-        '--token',
-        help='Access token of an account with scope of messages. '
-             'You also can pass it as an env variable ACCESS_TOKEN'
-    )
-    parser.add_argument(
-        '--peer',
-        dest='peer_id',
-        required=True,
-        help='ID of the conversation to dump'
-    )
     parser.add_argument(
         '-o',
         dest='out_dir',
@@ -25,16 +16,43 @@ def parse_args():
         default='vkms-result',
         help='Output directory where the materials are saved'
     )
+    parser.add_argument(
+        '-i',
+        '--include',
+        help='Comma-separated list of peer IDs to process. '
+             'If not specified, all peers will be processed'
+    )
+    parser.add_argument(
+        '-e',
+        '--exclude',
+        help='Comma-separated list of peer IDs that DON\'T need to be processed. '
+             'Ignored if the --include parameter is specified'
+    )
 
     subparsers = parser.add_subparsers(
         dest='action',
         help='One of the actions to be performed'
     )
-    subparsers.add_parser(
+
+    parser_dump = subparsers.add_parser(
         'dump',
         help='Save only the necessary information (VK API method outputs) '
              'in a machine-friendly format (JSON) for further processing'
     )
+
+    parser_dump.add_argument(
+        '--token',
+        help='Access token of an account with scope of messages. '
+             'You also can pass it as an env variable ACCESS_TOKEN'
+    )
+    parser_dump.add_argument(
+        '-t',
+        '--threads',
+        type=int,
+        default=2,
+        help='Number of threads to download peers, defaults to 2'
+    )
+
     parser_parse = subparsers.add_parser(
         'parse',
         help='Convert machine-friendly JSON format to human-readable'
@@ -58,12 +76,18 @@ def parse_args():
 
     token = getenv('ACCESS_TOKEN') or args.token
 
-    if token is None:
+    if args.action == 'dump' and token is None:
         parser.error(
             'You must define token as an ACCESS_TOKEN env variable '
             'or using the --token argument'
         )
 
     args.token = token
+
+    try:
+        args.include = parse_peer_ids(args.include)
+        args.exclude = parse_peer_ids(args.exclude)
+    except ValueError as e:
+        parser.error(str(e))
 
     return args

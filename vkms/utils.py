@@ -15,4 +15,24 @@ def load_peer(out_dir, peer_id):
 
 def dump_peer(out_dir, peer_id, peer):
     with open(f'{out_dir}/.json/{peer_id}.json', 'w') as file:
-        dump(peer, file, indent=2)
+        dump(peer, file)
+
+
+def parse_peer_ids(peer_ids):
+    if peer_ids is None:
+        return
+
+    res = set()
+
+    for peer_id in peer_ids.split(','):
+        if not peer_id:
+            continue
+
+        if peer_id[0] == 'c' and peer_id[1:].isdigit():
+            res.add(2000000000 + int(peer_id[1:]))
+        elif peer_id.isdigit():
+            res.add(int(peer_id))
+        else:
+            raise ValueError('Invalid peer ID: ' + peer_id)
+
+    return res

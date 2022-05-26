@@ -5,15 +5,11 @@ from .attachments import Attachment, gen_attachment
 from .utils import months
 
 
-def download(base_dir, api, peer_id, peer):
+def download(api, peer_id, peer):
     """
-    Загружает сообщения переписки. Для экономии обращений к методам VK API
-    используется execute и VKScirpt. В начале идут старые сообщения, в конце -
-    новые
+    Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
     Args:
-        base_dir (str): Абсолютный путь к каталогу, в котором находится файл
-            с основной точкой входа скрипта
         api (vk.API): Объект, через который происходит обращение к
             методам VK API
         peer_id (int): Идентификатор переписки, сообщения которой
@@ -21,27 +17,18 @@ def download(base_dir, api, peer_id, peer):
         peer (dict): Объект (словарь) переписки, в который необходимо
             сохранить скачанные сообщения
     """
-    with open(f'{base_dir}/vkscripts/messages.js', 'r') as file:
-        # Получаем шаблон кода VKScript
-        code_tpl = file.read()
-
-    # Передаем идентификатор переписки и кол-во обработанных сообщений
-    code = code_tpl \
-        .replace('PEERID', peer_id) \
-        .replace('PROCESSED', '0')
-
     # Получаем часть сообщений
-    res = api.execute(code=code)
-    msgs = res['messages']
+    res = api.messages.getHistory(count=200, peer_id=peer_id)
+    msgs = res['items']
+
+    processed = len(msgs)
 
     # Повторяем действия выше, пока все сообщения не будут загружены
-    while res['processed'] < res['count']:
-        code = code_tpl \
-            .replace('PEERID', peer_id) \
-            .replace('PROCESSED', res['processed'])
+    while processed < min(res['count'], 50000):
+        res = api.messages.getHistory(offset=processed, count=200, peer_id=peer_id)
+        msgs += res['items']
 
-        res = api.execute(code=code)
-        msgs += res['messages']
+        processed += len(res['items'])
 
     # Переворачиваем сообщения, чтобы в начале
     # оказались старые, а в конце - новые
