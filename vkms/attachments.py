@@ -16,6 +16,15 @@ def download(out_dir, msgs):
 
 
 class Attachment:
+    """
+    Абстрактный класс для представления любого объекта `attachment` из JSON
+    Документация: [https://dev.vk.com/reference/objects/attachments-message]
+
+    Args:
+        json (dict): Объект вложения, полученный ранее благодаря VK API
+    """
+
+    # Уникальный тип вложения
     tp = 'unknown'
 
     def __init__(self, json):  # noqa: U100
@@ -23,11 +32,29 @@ class Attachment:
 
 
 class FileAttachment(Attachment):
+    """
+    Абстрактный подкласс `Attachment` для представления вложения,
+    которое можно скачать (фото, документ и т.п.)
+    """
+
+    # Ссылка на загрузку файла
     url = None
+
+    # Название директории, в которую будут сохраняться вложения этого типа
     pf_dir = None
+
+    # Имя файла, под которым вложение будет сохранено (уникальное для каждого вложения)
     filename = None
 
     def download(self, out_dir):
+        """
+        Загружает и сохраняет вложение
+
+        Args:
+            out_dir (str): Абсолютный путь к каталогу, в котором находится
+                результат работы программы
+        """
+
         os.makedirs(f'{out_dir}/attachments/{self.pf_dir}/', exist_ok=True)
 
         path = f'{out_dir}/attachments/{self.pf_dir}/{self.filename}'
@@ -144,6 +171,7 @@ class Poll(Attachment):
         self.answer_ids = set(json['answer_ids'])
 
 
+# Словарь формата тип-вложение для более быстрого создания вложений
 _attachments = {
     atch.tp: atch
     for atch in Attachment.__subclasses__() + FileAttachment.__subclasses__()
@@ -151,4 +179,13 @@ _attachments = {
 
 
 def gen_attachment(json):
+    """
+    Генерирует вложение по его JSON
+
+    Args:
+        json (dict): Объект вложения, полученный ранее благодаря VK API
+
+    Returns:
+        Attachment: Полученный объект вложения
+    """
     return _attachments.get(json['type'], Attachment)(json[json['type']])
