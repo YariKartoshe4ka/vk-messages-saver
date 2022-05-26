@@ -159,6 +159,46 @@ class Graffiti(FileAttachment):
         self.filename = f"{json['owner_id']}_{json['id']}.png"
 
 
+class Call(Attachment):
+    tp = 'call'
+
+    def __init__(self, json):
+        self.initiator_id = json['initiator_id']
+
+        self.call_type = ''
+
+        if json['receiver_id'] > 2000000000:
+            self.call_type += 'групповой '
+
+        if json['video']:
+            self.call_type += 'видео'
+
+        self.state = json['state']
+
+        self.duration = '{M}:{S}'.format(
+            M=json['duration'] // 60,
+            S=str(json['duration'] % 60).zfill(2)
+        )
+
+    def get_state(self, owner_id):
+        if self.state == 'reached':
+            return 'завершен'
+
+        if owner_id == self.initiator_id:
+            if self.state == 'canceled_by_initiator':
+                return 'отменен'
+
+            if self.state == 'canceled_by_receiver':
+                return 'отклонен'
+
+        else:
+            if self.state == 'canceled_by_initiator':
+                return 'пропущен'
+
+            if self.state == 'canceled_by_receiver':
+                return 'отменен'
+
+
 class Poll(Attachment):
     tp = 'poll'
 

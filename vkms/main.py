@@ -17,7 +17,8 @@ def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     if args.action == 'dump':
-        actions.dump(base_dir, args.out_dir, api, args.peer_id)
+        owner = api.users.get()[0]
+        actions.dump(base_dir, args.out_dir, api, owner, args.peer_id)
 
     elif args.action == 'parse':
         actions.parse(args.out_dir, args.peer_id, args.fmt)
