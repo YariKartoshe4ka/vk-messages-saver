@@ -6,7 +6,8 @@ from .utils import months
 
 
 def download(base_dir, api, peer_id, peer):
-    """Загружает сообщения переписки. Для экономии обращений к методам VK API
+    """
+    Загружает сообщения переписки. Для экономии обращений к методам VK API
     используется execute и VKScirpt. В начале идут старые сообщения, в конце -
     новые
 
@@ -73,7 +74,8 @@ _actions: Dict[str, str] = {
 
 
 class Message:
-    """Класс для представления объекта `message` из JSON
+    """
+    Класс для представления объекта `message` из JSON
     Документация: [https://dev.vk.com/reference/objects/message]
 
     Args:
@@ -137,7 +139,8 @@ class Message:
 
     @staticmethod
     def get_id_by_json(json):
-        """Функция для получения идентификатора сообщения из JSON
+        """
+        Функция для получения идентификатора сообщения из JSON
 
         Args:
             json (dict): Объект сообщения полученный ранее благодаря VK API
@@ -148,7 +151,8 @@ class Message:
         return (json['date'], json['from_id'], json['conversation_message_id'])
 
     def full_date(self):
-        """Возвращает полную дату (день, месяц, год) отправки сообщения
+        """
+        Возвращает полную дату (день, месяц, год) отправки сообщения
 
         Returns:
             str: Полная дата
@@ -156,7 +160,8 @@ class Message:
         return self.date.strftime('%d {} %Y'.format(months[self.date.month]))
 
     def time(self):
-        """Возвращает время (час, минута) отправки сообщения
+        """
+        Возвращает время (час, минута) отправки сообщения
 
         Returns:
             str: Время отправки
@@ -169,7 +174,8 @@ _msgs: Dict[Tuple[int, int, int], Message] = {}
 
 
 def parse(peer, usernames):
-    """Парсит сообщения из JSON в объекты `Message` для дальнейшей работы
+    """
+    Парсит сообщения из JSON в объекты `Message` для дальнейшей работы
 
     Args:
         peer (dict): Объект (словарь) переписки, в который уже
@@ -187,11 +193,15 @@ def parse(peer, usernames):
 
 
 def gen_message(json, usernames):
-    """Генерирует и кеширует созданное сообщение по его ID
+    """
+    Генерирует и кеширует созданное сообщение по его ID
 
     Args:
         json (dict): Объект сообщения полученный ранее благодаря VK API
         usernames (dict): Словарь для получения имени пользователя по его ID
+
+    Returns:
+        Message: Сгенерированный объект сообщения
     """
     msg_id = Message.get_id_by_json(json)
 

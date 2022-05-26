@@ -3,7 +3,8 @@ from re import sub
 
 
 def save(out_dir, peer_id, fmt, msgs):
-    """Конвертирует и сохраняет сообщения в удобном для чтения формате
+    """
+    Конвертирует и сохраняет сообщения в удобном для чтения формате
 
     Args:
         out_dir (str): Абсолютный путь к каталогу, в котором находится
@@ -17,7 +18,8 @@ def save(out_dir, peer_id, fmt, msgs):
 
 
 def save_txt(out_dir, peer_id, msgs):
-    """Сохраняет переписку в формате TXT. Идея взята у hikiko4ern
+    """
+    Сохраняет переписку в формате TXT. Идея взята у hikiko4ern
     Ссылка: [https://github.com/hikiko4ern/vk_dump]
     """
     # Создаем папку для хранения переписки

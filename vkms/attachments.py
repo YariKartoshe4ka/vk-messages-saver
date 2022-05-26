@@ -186,6 +186,6 @@ def gen_attachment(json):
         json (dict): Объект вложения, полученный ранее благодаря VK API
 
     Returns:
-        Attachment: Полученный объект вложения
+        Attachment: Сгенерированный объект вложения
     """
     return _attachments.get(json['type'], Attachment)(json[json['type']])
