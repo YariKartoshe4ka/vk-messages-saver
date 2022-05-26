@@ -80,6 +80,10 @@ def convert_txt(msgs):
         for line in filter(None, convert_txt(msg.fwd_msgs).split('\n')):
             text.append('| ' + line)
 
+        # Добавляем место/геолокацию (если есть)
+        if msg.geo:
+            text.append('[место: {}, {}]'.format(*msg.geo))
+
         # Обрабатываем медиавложения
         for atch in msg.atchs:
             if atch.tp == 'photo':

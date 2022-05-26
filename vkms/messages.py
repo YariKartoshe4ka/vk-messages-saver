@@ -125,6 +125,12 @@ class Message:
         # Флаг, было ли сообщение отредактировано
         self.is_edited = 'update_time' in json
 
+        # Координаты геолокации (если есть)
+        self.geo = None
+
+        if 'geo' in json:
+            self.geo = json['geo']['coordinates'].values()
+
         # Список пересланных сообщений, вместе образуют дерево
         self.fwd_msgs: List[Message] = [
             gen_message(fwd_msg_json, usernames)
