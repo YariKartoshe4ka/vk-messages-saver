@@ -10,7 +10,14 @@ def main():
     makedirs(f'{args.out_dir}/.json/', exist_ok=True)
 
     if args.action == 'dump':
-        actions.dump(args.out_dir, args.include, args.exclude, args.token, args.threads)
+        actions.dump(
+            args.out_dir,
+            args.include,
+            args.exclude,
+            args.token,
+            args.threads,
+            args.max_msgs
+        )
 
     elif args.action == 'parse':
         actions.parse(args.out_dir, args.include, args.exclude, args.fmt)

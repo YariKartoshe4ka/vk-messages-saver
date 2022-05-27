@@ -11,7 +11,7 @@ from .utils import dump_peer
 logging.getLogger('vk').setLevel(logging.FATAL)
 
 
-def dump(out_dir, include, exclude, token, nthreads):
+def dump(out_dir, include, exclude, token, nthreads, max_msgs):
     """
     Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
 
@@ -67,7 +67,7 @@ def dump(out_dir, include, exclude, token, nthreads):
             peer['info']['account'] = account
 
             # Сохраняем все сообщения и информацию об участниках переписки
-            messages.download(api, peer_id, peer)
+            messages.download(api, peer_id, peer, max_msgs)
             users.download(api, peer)
 
             # Записываем все в JSON

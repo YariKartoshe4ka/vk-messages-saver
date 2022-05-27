@@ -5,7 +5,7 @@ from .attachments import Attachment, gen_attachment
 from .utils import months
 
 
-def download(api, peer_id, peer):
+def download(api, peer_id, peer, max_msgs):
     """
     Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
@@ -24,7 +24,7 @@ def download(api, peer_id, peer):
     processed = len(msgs)
 
     # Повторяем действия выше, пока все сообщения не будут загружены
-    while processed < min(res['count'], 50000):
+    while processed < min(res['count'], max_msgs):
         res = api.messages.getHistory(offset=processed, count=200, peer_id=peer_id)
         msgs += res['items']
 

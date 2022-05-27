@@ -56,6 +56,16 @@ def parse_args():
         default=2,
         help='Number of threads to download peers, defaults to 2'
     )
+    parser_dump.add_argument(
+        '-m',
+        '--max-msgs',
+        metavar='MAX',
+        type=int,
+        default=50000,
+        help='Maximum number of messages to be saved in each conversation. '
+             'Increasing the parameter will consume more RAM. '
+             'Defaults to 50000'
+    )
 
     parser_parse = subparsers.add_parser(
         'parse',
