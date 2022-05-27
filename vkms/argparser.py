@@ -19,12 +19,16 @@ def parse_args():
     parser.add_argument(
         '-i',
         '--include',
+        type=parse_peer_ids,
+        default=set(),
         help='Comma-separated list of peer IDs to process. '
              'If not specified, all peers will be processed'
     )
     parser.add_argument(
         '-e',
         '--exclude',
+        type=parse_peer_ids,
+        default=set(),
         help='Comma-separated list of peer IDs that DON\'T need to be processed. '
              'Ignored if the --include parameter is specified'
     )
@@ -74,20 +78,15 @@ def parse_args():
 
     args = parser.parse_args()
 
-    token = getenv('ACCESS_TOKEN') or args.token
+    if args.action == 'dump':
+        token = getenv('ACCESS_TOKEN') or args.token
 
-    if args.action == 'dump' and token is None:
-        parser.error(
-            'You must define token as an ACCESS_TOKEN env variable '
-            'or using the --token argument'
-        )
+        if token is None:
+            parser.error(
+                'You must define token as an ACCESS_TOKEN env variable '
+                'or using the --token argument'
+            )
 
-    args.token = token
-
-    try:
-        args.include = parse_peer_ids(args.include)
-        args.exclude = parse_peer_ids(args.exclude)
-    except ValueError as e:
-        parser.error(str(e))
+        args.token = token
 
     return args

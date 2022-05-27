@@ -18,6 +18,9 @@ def download(api, peer):
     # Обход сообщений в ширину
     queue = deque(peer['messages'])
 
+    if peer['info']['peer']['id'] < 2000000000:
+        queue.append({'from_id': peer['info']['peer']['id']})
+
     while queue:
         msg = queue.popleft()
 
@@ -44,6 +47,9 @@ def download(api, peer):
         # Если у сообщения есть пересланные, то добавляем их в очередь
         if 'fwd_messages' in msg:
             queue.extend(msg['fwd_messages'])
+
+        if 'reply_message' in msg:
+            queue.append(msg['reply_message'])
 
     # Получаем имена пользователей и групп
     res = {'users': [], 'groups': []}

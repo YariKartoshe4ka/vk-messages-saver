@@ -1,8 +1,10 @@
 from os import makedirs
 from re import sub
 
+from pathvalidate import sanitize_filename
 
-def save(out_dir, fmt, info, msgs):
+
+def save(out_dir, fmt, peer):
     """
     Конвертирует и сохраняет сообщения в удобном для чтения формате
 
@@ -12,10 +14,10 @@ def save(out_dir, fmt, info, msgs):
         fmt (str): Формат, в котором нужно сохранить переписку
         msgs (List[Message]): Список всех сообщений переписки
     """
-    globals()['save_' + fmt](out_dir, info, msgs)
+    globals()['save_' + fmt](out_dir, peer)
 
 
-def save_txt(out_dir, info, msgs):
+def save_txt(out_dir, peer):
     """
     Сохраняет переписку в формате TXT. Идея взята у hikiko4ern
     Ссылка: [https://github.com/hikiko4ern/vk_dump]
@@ -23,12 +25,18 @@ def save_txt(out_dir, info, msgs):
     # Создаем папку для хранения переписки
     makedirs(f'{out_dir}/dialogs/txt/', exist_ok=True)
 
+    path = '{out_dir}/dialogs/txt/{title}_{peer_id}.txt'.format(
+        out_dir=out_dir,
+        title=sanitize_filename(peer.title, replacement_text='_'),
+        peer_id=peer.info['peer']['id']
+    )
+
     # Сохраняем конвертированный текст
-    with open(f"{out_dir}/dialogs/txt/{info['peer']['id']}.txt", 'w') as file:
-        file.write(convert_txt(msgs, info['owner']['id']))
+    with open(path, 'w') as file:
+        file.write(convert_txt(peer.msgs, peer.info['account']['id']))
 
 
-def convert_txt(msgs, owner_id):
+def convert_txt(msgs, account_id):
     # Буффер текста переписки
     buf = ''
 
@@ -55,7 +63,7 @@ def convert_txt(msgs, owner_id):
         # Если сообщение отправлено в ответ на другое, обрабатываем другое
         # сообщение отдельно
         if msg.reply_msg:
-            convert_txt([msg.reply_msg], owner_id)
+            convert_txt([msg.reply_msg], account_id)
 
             for line in msg.reply_msg.text_parsed:
                 text.append('{username} {line}'.format(
@@ -75,7 +83,7 @@ def convert_txt(msgs, owner_id):
             ])
 
         # Если есть пересланные сообщения, обрабатываем их рекурсивно
-        for line in filter(None, convert_txt(msg.fwd_msgs, owner_id).split('\n')):
+        for line in filter(None, convert_txt(msg.fwd_msgs, account_id).split('\n')):
             text.append('| ' + line)
 
         # Добавляем место/геолокацию (если есть)
@@ -110,7 +118,7 @@ def convert_txt(msgs, owner_id):
             elif atch.tp == 'call':
                 text.append('[{tp}звонок: {state}{duration}]'.format(
                     tp=atch.call_type,
-                    state=atch.get_state(owner_id),
+                    state=atch.get_state(account_id),
                     duration=f' ({atch.duration})' if atch.state == 'reached' else ''
                 ))
 

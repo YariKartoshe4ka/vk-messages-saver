@@ -1,4 +1,5 @@
 import logging
+from os import listdir
 from threading import Thread
 from time import sleep
 
@@ -10,13 +11,11 @@ from .utils import dump_peer
 logging.getLogger('vk').setLevel(logging.FATAL)
 
 
-def dump(base_dir, out_dir, include, exclude, token, nthreads):
+def dump(out_dir, include, exclude, token, nthreads):
     """
     Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
 
     Args:
-        base_dir (str): Абсолютный путь к каталогу, в котором находится файл
-            с основной точкой входа скрипта
         out_dir (str): Абсолютный путь к каталогу, в котором находится
             результат работы программы
         include (set): Множество идентификаторов переписок, которые нужно сохранить
@@ -33,7 +32,7 @@ def dump(base_dir, out_dir, include, exclude, token, nthreads):
     api = API(access_token=token, v='5.131')
 
     # Загружаем информацию о всех переписках пользователя
-    peers_info = peers.download(base_dir, api)
+    peers_info = peers.download(api)
 
     # Создаем словарь вида id-переписка для быстрого доступа к JSON'у конкретной переписки
     peer_by_id = {peer['peer']['id']: peer for peer in peers_info}
@@ -47,7 +46,6 @@ def dump(base_dir, out_dir, include, exclude, token, nthreads):
     # Выбираем нужные переписки
     if include:
         peer_ids &= include
-
     elif exclude:
         peer_ids -= exclude
 
@@ -69,7 +67,7 @@ def dump(base_dir, out_dir, include, exclude, token, nthreads):
             peer['info']['account'] = account
 
             # Сохраняем все сообщения и информацию об участниках переписки
-            messages.download(base_dir, api, peer_id, peer)
+            messages.download(api, peer_id, peer)
             users.download(api, peer)
 
             # Записываем все в JSON
@@ -91,9 +89,37 @@ def dump(base_dir, out_dir, include, exclude, token, nthreads):
     print('100%')
 
 
-def parse(out_dir, peer_id, fmt):
-    peer = peers.Peer(out_dir, peer_id)
-    saver.save(out_dir, fmt, peer)
+def parse(out_dir, include, exclude, fmt):
+    """
+    Сохраняет полученные переписки в удобном для чтения формате
+
+    Args:
+        out_dir (str): Абсолютный путь к каталогу, в котором находится
+            результат работы программы
+        include (set): Множество идентификаторов переписок, которые нужно сохранить
+        exclude (set): Множество идентификаторов переписок, которые не нужно сохранять
+        fmt (str): Формат, в котором следует сохранять переписки
+    """
+    # Получаем идентификаторы всех скачанных переписок
+    peer_ids = {int(file.rstrip('.json')) for file in listdir(f'{out_dir}/.json/')}
+
+    # Выбираем нужные переписки
+    if include:
+        peer_ids &= include
+    elif exclude:
+        peer_ids -= exclude
+
+    peer_ids_cnt = 0
+
+    # Обрабатываем каждую переписку отдельно
+    for peer_id in peer_ids:
+        print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
+
+        peer = peers.Peer(out_dir, peer_id)
+        saver.save(out_dir, fmt, peer)
+        peer_ids_cnt += 1
+
+    print('100%')
 
 
 def atch(out_dir, peer_id):

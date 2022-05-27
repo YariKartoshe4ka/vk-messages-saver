@@ -19,9 +19,6 @@ def dump_peer(out_dir, peer_id, peer):
 
 
 def parse_peer_ids(peer_ids):
-    if peer_ids is None:
-        return
-
     res = set()
 
     for peer_id in peer_ids.split(','):
@@ -30,7 +27,7 @@ def parse_peer_ids(peer_ids):
 
         if peer_id[0] == 'c' and peer_id[1:].isdigit():
             res.add(2000000000 + int(peer_id[1:]))
-        elif peer_id.isdigit():
+        elif peer_id.isdigit() or peer_id[0] == '-' and peer_id[1:].isdigit():
             res.add(int(peer_id))
         else:
             raise ValueError('Invalid peer ID: ' + peer_id)
