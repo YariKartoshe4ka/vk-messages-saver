@@ -4,11 +4,10 @@ from threading import Thread
 from time import sleep
 
 import vk
+from vk.exceptions import VkAPIError
 
 from . import attachments, messages, peers, saver, users
 from .utils import dump_peer
-
-logging.getLogger('vk').setLevel(logging.FATAL)
 
 
 def dump(out_dir, include, exclude, token, nthreads, max_msgs):
@@ -29,7 +28,19 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
             sleep(1)
             return self.send(request)
 
+        def get_captcha_key(self, request):
+            return input(f'Captcha needed ({request.api_error.captcha_img}): ')
+
     api = API(access_token=token, v='5.131')
+
+    # Загружаем информацию о владельце страницы
+    try:
+        account = api.users.get()[0]
+    except VkAPIError:
+        print('Failed to load base information. '
+              f'See logs for details: {out_dir}/logs.txt')
+
+        return
 
     # Загружаем информацию о всех переписках пользователя
     peers_info = peers.download(api)
@@ -40,9 +51,6 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
     # Создаем множество идентификаторов для последующей выборки нужных
     peer_ids = set(peer_by_id.keys())
 
-    # Загружаем информацию о владельце страницы
-    account = api.users.get()[0]
-
     # Выбираем нужные переписки
     if include:
         peer_ids &= include
@@ -51,6 +59,8 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
 
     peer_ids = list(peer_ids)
     peer_ids_len = len(peer_ids)
+
+    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
 
     def dump_thread():
         """Поток для загрузки переписки"""
@@ -62,13 +72,20 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
             except IndexError:
                 return
 
+            logging.info(f'Processing peer {peer_id}')
+
             # Сохраняем информацию о переписке и владельце страницы
             peer = {'info': peer_by_id[peer_id]}
             peer['info']['account'] = account
 
-            # Сохраняем все сообщения и информацию об участниках переписки
-            messages.download(api, peer_id, peer, max_msgs)
-            users.download(api, peer)
+            try:
+                # Сохраняем все сообщения и информацию об участниках переписки
+                messages.download(api, peer_id, peer, max_msgs)
+                users.download(api, peer)
+
+            except VkAPIError as e:
+                logging.error(f'Downloading peer {peer_id} failed: {e}')
+                return
 
             # Записываем все в JSON
             dump_peer(out_dir, peer_id, peer)
@@ -77,14 +94,18 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
     tds = []
 
     # Создаем N потоков
-    for _ in range(nthreads):
+    for _ in range(min(nthreads, peer_ids_len)):
         td = Thread(target=dump_thread, daemon=True)
         td.start()
         tds.append(td)
 
     # Ждем, пока все переписки будут скачаны
-    while peer_ids:
+    while sum(td.is_alive() for td in tds):
         print(f'{round((peer_ids_len - len(peer_ids)) / peer_ids_len * 100)}%', end='\r')
+
+    # Сливаем потоки
+    for td in tds:
+        td.join()
 
     print('100%')
 
@@ -109,15 +130,24 @@ def parse(out_dir, include, exclude, fmt):
     elif exclude:
         peer_ids -= exclude
 
-    peer_ids_cnt = 0
+    processed = 0
+
+    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
 
     # Обрабатываем каждую переписку отдельно
     for peer_id in peer_ids:
-        print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
+        logging.info(f'Processing peer {peer_id}')
 
-        peer = peers.Peer(out_dir, peer_id)
-        saver.save(out_dir, fmt, peer)
-        peer_ids_cnt += 1
+        print(f'{round(processed / len(peer_ids) * 100)}%', end='\r')
+
+        try:
+            peer = peers.Peer(out_dir, peer_id)
+        except Exception:
+            logging.error(f'Loading peer {peer_id} failed: JSON may be corrupted')
+        else:
+            saver.save(out_dir, fmt, peer)
+
+        processed += 1
 
     print('100%')
 
@@ -142,14 +172,23 @@ def atch(out_dir, include, exclude, nthreads):
     elif exclude:
         peer_ids -= exclude
 
+    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
+
     peer_ids_cnt = 0
 
     # Обрабатываем каждую переписку отдельно
     for peer_id in peer_ids:
+        logging.info(f'Processing peer {peer_id}')
+
         print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
 
-        peer = peers.Peer(out_dir, peer_id)
-        attachments.download(out_dir, peer, nthreads)
+        try:
+            peer = peers.Peer(out_dir, peer_id)
+        except Exception:
+            logging.error(f'Loading peer {peer_id} failed: JSON may be corrupted')
+        else:
+            attachments.download(out_dir, peer, nthreads)
+
         peer_ids_cnt += 1
 
     print('100%')

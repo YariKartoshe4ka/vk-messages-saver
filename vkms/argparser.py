@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from os import getenv
-from pathlib import Path
 
 from .utils import parse_peer_ids
 
@@ -12,7 +11,6 @@ def parse_args():
         '-o',
         dest='out_dir',
         metavar='OUTDIR',
-        type=Path,
         default='vkms-result',
         help='Output directory where the materials are saved'
     )
@@ -91,7 +89,7 @@ def parse_args():
         '-t',
         '--threads',
         type=int,
-        default=2,
+        default=8,
         help='Number of threads to download peers, defaults to 8'
     )
 

@@ -1,9 +1,11 @@
+import logging
 import os
 from operator import itemgetter
 from threading import Thread
 
 from pathvalidate import sanitize_filename
 from requests import get
+from requests.exceptions import RequestException
 
 
 def download(out_dir, peer, nthreads):
@@ -37,6 +39,8 @@ def download(out_dir, peer, nthreads):
             except IndexError:
                 return
 
+            logging.info(f'Downloading attachment {atch.tp}, {atch.filename}')
+
             # Загружаем вложение
             atch.download(out_dir)
 
@@ -44,7 +48,7 @@ def download(out_dir, peer, nthreads):
     tds = []
 
     # Создаем N потоков
-    for _ in range(nthreads):
+    for _ in range(min(nthreads, len(atchs))):
         td = Thread(target=atch_thread, daemon=True)
         td.start()
         tds.append(td)
@@ -107,19 +111,35 @@ class FileAttachment(Attachment):
         # Есть 3 попытки для установления соединения
         # (если ошибка произошла на стороне сервера)
         while attempts < 3:
-            with get(self.url, stream=True) as r:
-                if r.status_code >= 500:
-                    attempts += 1
+            try:
+                with get(self.url, stream=True) as r:
+                    if r.status_code >= 500:
+                        attempts += 1
+                        continue
 
-                # Если ошибка на нашей стороне - пропускаем это вложение
-                elif r.status_code >= 400:
-                    return
+                    # Если ошибка на нашей стороне - пропускаем это вложение
+                    elif r.status_code >= 400:
+                        logging.error(
+                            'Downloading attachment failed: HTTP code %s. Url: %s',
+                            r.status_code, self.url
+                        )
+                        return
 
-                # Скачивание происходит порциями (чанками), т.к. максимальный
-                # размер вложения VK - 2ГБ
-                with open(path, 'wb') as file:
-                    for chunk in r.iter_content(chunk_size=(1 << 20) * 10):
-                        file.write(chunk)
+                    # Скачивание происходит порциями (чанками), т.к. максимальный
+                    # размер вложения VK - 2ГБ
+                    with open(path, 'wb') as file:
+                        for chunk in r.iter_content(chunk_size=(1 << 20) * 10):
+                            file.write(chunk)
+
+                        return
+
+            except RequestException:
+                attempts += 1
+
+        logging.error(
+            'Downloading attachment failed: HTTP code > 500 or '
+            'weak connection. Url: ' + self.url
+        )
 
 
 class Photo(FileAttachment):
