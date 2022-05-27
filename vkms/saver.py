@@ -36,7 +36,7 @@ def save_txt(out_dir, peer):
         file.write(convert_txt(peer.msgs, peer.info['account']['id']))
 
 
-def convert_txt(msgs, account_id):
+def convert_txt(msgs, account_id, is_reply=False):
     # Буффер текста переписки
     buf = ''
 
@@ -62,8 +62,8 @@ def convert_txt(msgs, account_id):
 
         # Если сообщение отправлено в ответ на другое, обрабатываем другое
         # сообщение отдельно
-        if msg.reply_msg:
-            convert_txt([msg.reply_msg], account_id)
+        if not is_reply and msg.reply_msg:
+            convert_txt([msg.reply_msg], account_id, True)
 
             for line in msg.reply_msg.text_parsed:
                 text.append('{username} {line}'.format(
@@ -124,11 +124,11 @@ def convert_txt(msgs, account_id):
 
             elif atch.tp == 'poll':
                 pool_text = [f'[опрос: "{atch.title}", {atch.anon}, {atch.mult}]']
-                maxl = len(pool_text[0])
+                max_len = len(pool_text[0])
 
                 for ans in atch.answers:
                     pool_text.append(
-                        '  ["{text}":{{indent}}{is_voted}{rate}% ({votes}/{all_votes})]'.format(
+                        '  ["{text}":   {{indent}}{is_voted}{rate}% ({votes}/{all_votes})]'.format(
                             text=ans['text'],
                             is_voted='✓ ' if ans['id'] in atch.answer_ids else '',
                             rate=round(ans['rate']),
@@ -136,15 +136,21 @@ def convert_txt(msgs, account_id):
                             all_votes=atch.all_votes
                         )
                     )
-                    maxl = max(maxl, len(pool_text[-1]) - len('{indent}'))
+                    max_len = max(max_len, len(pool_text[-1]) - len('{indent}'))
 
                 for line in pool_text:
-                    text.append(line.format(indent=' ' * (maxl - len(line) + len('{indent}'))))
+                    text.append(line.format(
+                        indent=' ' * (max_len - len(line) + len('{indent}'))
+                    ))
             else:
-                text.append('{uknown attachment}')
+                text.append('[uknown attachment]')
+
+        # Если сообщение является исчезающим
+        if msg.is_expired:
+            text.append('[Сообщение исчезло]')
 
         # Если сообщение было отредактировано, добавляем заметку
-        if msg.is_edited:
+        elif msg.is_edited:
             text.append('(ред.)')
 
         # Кэшируем полученный текст

@@ -56,6 +56,8 @@ _actions: Dict[str, str] = {
     'chat_pin_message': '{member} закрепил(-а) сообщение "{msg}"',
     'chat_unpin_message': '{member} открепил(-а) сообщение',
     'chat_invite_user_by_link': '{member} присоединился(-ась) к беседе по ссылке',
+    'conversation_style_update': '{member} изменил(-а) оформление чата',
+    'chat_screenshot': '{member} сделал(-а) скриншот беседы',
     '_chat_leave_user': '{member} вышел(-а) из беседы'
 }
 
@@ -108,6 +110,9 @@ class Message:
 
         if 'reply_message' in json:
             self.reply_msg = gen_message(json['reply_message'], usernames)
+
+        # Флаг, является ли актуальным сообщение (для исчезающих сообщений)
+        self.is_expired = json.get('is_expired')
 
         # Флаг, было ли сообщение отредактировано
         self.is_edited = 'update_time' in json
