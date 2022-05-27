@@ -33,6 +33,7 @@ def parse_args():
 
     subparsers = parser.add_subparsers(
         dest='action',
+        required=True,
         help='One of the actions to be performed'
     )
 

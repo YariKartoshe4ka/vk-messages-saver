@@ -3,3 +3,5 @@ __pycache__/
 other/
 *.json
 vkms-result*
+build/
+*.egg-info
