@@ -61,10 +61,6 @@ def parse_args():
         'parse',
         help='Convert machine-friendly JSON format to human-readable'
     )
-    subparsers.add_parser(
-        'atch',
-        help='Download messages attachments (photos, audio, etc.)'
-    )
 
     parser_parse.add_argument(
         '-f',
@@ -74,6 +70,19 @@ def parse_args():
         metavar='FORMAT',
         help='An easy-to-read format in which received messages must be '
              'converted. Supported formats: %(choices)s'
+    )
+
+    parser_atch = subparsers.add_parser(
+        'atch',
+        help='Download messages attachments (photos, audio, etc.)'
+    )
+
+    parser_atch.add_argument(
+        '-t',
+        '--threads',
+        type=int,
+        default=2,
+        help='Number of threads to download peers, defaults to 8'
     )
 
     args = parser.parse_args()

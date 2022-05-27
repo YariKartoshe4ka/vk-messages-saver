@@ -2,4 +2,4 @@ __pycache__/
 *.pyc
 other/
 *.json
-vkms-result
+vkms-result*

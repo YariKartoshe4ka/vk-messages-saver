@@ -12,7 +12,7 @@ def save(out_dir, fmt, peer):
         out_dir (str): Абсолютный путь к каталогу, в котором находится
             результат работы программы
         fmt (str): Формат, в котором нужно сохранить переписку
-        msgs (List[Message]): Список всех сообщений переписки
+        peer (peers.Peer): Объект переписки
     """
     globals()['save_' + fmt](out_dir, peer)
 

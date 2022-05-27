@@ -122,6 +122,34 @@ def parse(out_dir, include, exclude, fmt):
     print('100%')
 
 
-def atch(out_dir, peer_id):
-    peer = peers.Peer(out_dir, peer_id)
-    attachments.download(out_dir, peer)
+def atch(out_dir, include, exclude, nthreads):
+    """
+    Скачивает вложения указанных переписок
+
+    Args:
+        out_dir (str): Абсолютный путь к каталогу, в котором находится
+            результат работы программы
+        include (set): Множество идентификаторов переписок, которые нужно обработать
+        exclude (set): Множество идентификаторов переписок, которые не нужно обрабатывать
+        nthreads (int): Количество потоков, загружающих вложения
+    """
+    # Получаем идентификаторы всех скачанных переписок
+    peer_ids = {int(file.rstrip('.json')) for file in listdir(f'{out_dir}/.json/')}
+
+    # Выбираем нужные переписки
+    if include:
+        peer_ids &= include
+    elif exclude:
+        peer_ids -= exclude
+
+    peer_ids_cnt = 0
+
+    # Обрабатываем каждую переписку отдельно
+    for peer_id in peer_ids:
+        print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
+
+        peer = peers.Peer(out_dir, peer_id)
+        attachments.download(out_dir, peer, nthreads)
+        peer_ids_cnt += 1
+
+    print('100%')

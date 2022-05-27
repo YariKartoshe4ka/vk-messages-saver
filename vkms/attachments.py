@@ -1,18 +1,57 @@
 import os
 from operator import itemgetter
-from urllib.parse import urlparse
+from threading import Thread
 
 from pathvalidate import sanitize_filename
 from requests import get
 
 
-def download(out_dir, msgs):
+def download(out_dir, peer, nthreads):
+    """
+    Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
+
+    Args:
+        out_dir (str): Абсолютный путь к каталогу, в котором находится
+            результат работы программы
+        peer (peers.Peer): Объект переписки
+        nthreads (int): Количество потоков, загружающих вложения
+    """
+    # Создаем папку для хранения вложений
     os.makedirs(f'{out_dir}/attachments/', exist_ok=True)
 
-    for msg in msgs:
+    # Создаем список, состоящий только из скачиваемых вложений
+    atchs = []
+
+    for msg in peer.msgs:
         for atch in msg.atchs:
             if isinstance(atch, FileAttachment):
-                atch.download(out_dir)
+                atchs.append(atch)
+
+    def atch_thread():
+        """Поток для загрузки вложений"""
+
+        # Работает, пока остались нескачанные вложения
+        while True:
+            try:
+                atch = atchs.pop()
+            except IndexError:
+                return
+
+            # Загружаем вложение
+            atch.download(out_dir)
+
+    # Список всех потоков
+    tds = []
+
+    # Создаем N потоков
+    for _ in range(nthreads):
+        td = Thread(target=atch_thread, daemon=True)
+        td.start()
+        tds.append(td)
+
+    # Ждем, пока все вложения будут скачаны
+    for td in tds:
+        td.join()
 
 
 class Attachment:
@@ -54,13 +93,33 @@ class FileAttachment(Attachment):
             out_dir (str): Абсолютный путь к каталогу, в котором находится
                 результат работы программы
         """
-
+        # Создаем папку для хранения вложений этого типа
         os.makedirs(f'{out_dir}/attachments/{self.pf_dir}/', exist_ok=True)
 
         path = f'{out_dir}/attachments/{self.pf_dir}/{self.filename}'
 
-        with open(path, 'wb') as file:
-            file.write(get(self.url).content)
+        # Если файл уже скачан, пропускаем его
+        if os.path.exists(path):
+            return
+
+        attempts = 0
+
+        # Есть 3 попытки для установления соединения
+        # (если ошибка произошла на стороне сервера)
+        while attempts < 3:
+            with get(self.url, stream=True) as r:
+                if r.status_code >= 500:
+                    attempts += 1
+
+                # Если ошибка на нашей стороне - пропускаем это вложение
+                elif r.status_code >= 400:
+                    return
+
+                # Скачивание происходит порциями (чанками), т.к. максимальный
+                # размер вложения VK - 2ГБ
+                with open(path, 'wb') as file:
+                    for chunk in r.iter_content(chunk_size=(1 << 20) * 10):
+                        file.write(chunk)
 
 
 class Photo(FileAttachment):
@@ -138,7 +197,7 @@ class Gift(FileAttachment):
 
     def __init__(self, json):
         self.url = json['thumb_256']
-        self.filename = str(json['id']) + os.path.splitext(urlparse(self.url).path)[1]
+        self.filename = f"{json['id']}.jpg"
 
 
 class AudioMessage(FileAttachment):
