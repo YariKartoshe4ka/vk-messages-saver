@@ -40,5 +40,5 @@ packages = ["vkms"]
 [tool.setuptools.dynamic]
 version = {attr = "vkms.__version__"}
 
-[flake8]
+[tool.flake8]
 max-line-length = 100
