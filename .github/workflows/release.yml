@@ -40,8 +40,6 @@ jobs:
         run: pip install build
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          ref: pypi
       - name: Build project
         run: python -m build --sdist --wheel --outdir dist/ .
       - name: Publish to Test PyPI
