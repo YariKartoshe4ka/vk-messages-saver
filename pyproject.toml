@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vkms"
+description = "Утилита для сохранения переписок ВКонтакте"
+license = { text = "GPL-3.0-only" }
+authors = [
+    { name = "Yaroslav Kikel", email = "yaroslav.kikel.06@inbox.ru"}
+]
+dependencies = [
+    "pathvalidate~=2.5",
+    "requests~=2.24",
+    "vk-paw>=3.0.dev"
+]
+readme = "README.md"
+keywords = ["api", "parser", "vk", "messages", "saver"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Utilities",
+    "Environment :: Console"
+]
+scripts = { vkms = "vkms.main:main" }
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["vkms"]
+
+[tool.setuptools.dynamic]
+version = {attr = "vkms.__version__"}
+
+[flake8]
+max-line-length = 100

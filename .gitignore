@@ -5,3 +5,4 @@ other/
 vkms-result*
 build/
 *.egg-info
+dist/
