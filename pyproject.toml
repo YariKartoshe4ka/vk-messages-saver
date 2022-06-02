@@ -12,8 +12,9 @@ authors = [
 dependencies = [
     "pathvalidate~=2.5",
     "requests~=2.24",
-    "vk-paw>=3.0.dev"
+    "vk>=3.0.dev"
 ]
+urls.Homepage = "https://github.com/YariKartoshe4ka/vk-messages-saver"
 readme = "README.md"
 keywords = ["api", "parser", "vk", "messages", "saver"]
 classifiers = [
