@@ -88,7 +88,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
                 return
 
             # Записываем все в JSON
-            dump_peer(out_dir, peer_id, peer)
+            dump_peer(out_dir, peer)
 
     # Список всех потоков
     tds = []

@@ -60,10 +60,10 @@ def parse_args():
         '--max-msgs',
         metavar='MAX',
         type=int,
-        default=50000,
+        default=75000,
         help='Maximum number of messages to be saved in each conversation. '
              'Increasing the parameter will consume more RAM. '
-             'Defaults to 50000'
+             'Defaults to 75000'
     )
 
     parser_parse = subparsers.add_parser(
