@@ -6,7 +6,7 @@ from .argparser import parse_args
 
 
 def _setup_logging(out_dir):
-    logging.getLogger('vk').setLevel(logging.INFO)
+    logging.getLogger('vk').setLevel(logging.WARNING)
     logging.basicConfig(
         filename=f'{out_dir}/logs.txt',
         filemode='a',
@@ -18,6 +18,9 @@ def _setup_logging(out_dir):
 
 
 def main():
+    """
+    Входная точка программы
+    """
     args = parse_args()
 
     makedirs(f'{args.out_dir}/.json/', exist_ok=True)

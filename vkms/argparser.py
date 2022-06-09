@@ -5,6 +5,12 @@ from .utils import parse_peer_ids
 
 
 def parse_args():
+    """
+    Создает объект парсера и парсит аргументы
+
+    Returns:
+        argparse.Namespace: Набор аргументов парсера
+    """
     parser = ArgumentParser()
 
     parser.add_argument(
