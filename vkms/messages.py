@@ -79,7 +79,8 @@ class Message:
         self.id: tuple = Message.get_id_by_json(json)
 
         # Получение имени отправителя по его ID
-        self.username: str = usernames[json['from_id']]
+        self.from_id = json['from_id']
+        self.username: str = usernames[self.from_id]
 
         # Получение времени отправления сообщения из формата Unixtime
         self.date = datetime.datetime.fromtimestamp(json['date'])

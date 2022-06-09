@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      font-family: sans-serif;
+      color: #000;
+    }
+
+    html, body {
+      width: 100%;
+    }
+
+    a {
+      color: #2d81e0;
+    }
+
+    #container {
+      width: 60%;
+      margin: 25px auto;
+    }
+
+    .date {
+      font-size: 90%;
+      color: #9198a2;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .message {
+      margin-top: 4px;
+      border-radius: 14px;
+      padding: 8px;
+      width: fit-content;
+      max-width: 60%;
+    }
+
+    .message-incoming {
+      background-color: #ecedf1;
+      text-align: left;
+    }
+
+    .message-outcoming {
+      background-color: #cce4ff;
+      margin-left: auto;
+      margin-right: 0;
+      text-align: right;
+    }
+
+    .message-username {
+      font-size: 80%;
+      color: #2d81e0;
+    }
+
+    .message-text {
+      overflow-wrap: break-word;
+      width: 100%;
+    }
+
+    .message-date {
+      font-size: 65%;
+      color: #9198a2;
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    {% set ns = namespace(account_id = peer.info['account']['id'], prev_msg = none) %}
+
+    {% for msg in peer.msgs %}
+
+      {% if ns.prev_msg is none or (msg.date.day - ns.prev_msg.date.day >= 1) %}
+        <div class="date">
+          {{ msg.full_date() }}
+        </div>
+      {% endif %}
+
+      <div class="message message-{% if msg.from_id == ns.account_id %}outcoming{% else %}incoming{% endif %}">
+        {% if peer.info['peer']['id'] >= 2000000000
+          and msg.from_id != ns.account_id
+          and ns.prev_msg.from_id != msg.from_id
+        %}
+          <div class="message-username">
+            {{ msg.username }}
+          </div>
+        {% endif %}
+
+        <div class="message-text">
+          {% for line in msg.text.split('\n') %}
+            {{ line | regex_replace(
+              '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
+              '<a>\\1</a>'
+            ) }}
+            <br>
+          {% endfor %}
+        </div>
+
+        <div class="message-date">
+          {{ msg.time() }}
+        </div>
+      </div>
+
+      {% set ns.prev_msg = msg %}
+
+    {% endfor %}
+  </div>
+
+  <script>
+    // document.addEventListener("DOMContentLoaded", () => {
+    //   window.scrollTo(0, document.body.scrollHeight);
+    // });
+  </script>
+</body>
+</html>

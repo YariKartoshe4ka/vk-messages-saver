@@ -80,7 +80,7 @@ def parse_args():
     parser_parse.add_argument(
         '-f',
         dest='fmt',
-        choices=('txt',),
+        choices=('txt', 'html'),
         default='txt',
         metavar='FORMAT',
         help='An easy-to-read format in which received messages must be '

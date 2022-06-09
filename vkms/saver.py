@@ -1,6 +1,7 @@
-from os import makedirs
+import os
 from re import sub
 
+from jinja2 import Environment, FileSystemLoader
 from pathvalidate import sanitize_filename
 
 
@@ -23,7 +24,7 @@ def save_txt(out_dir, peer):
     Ссылка: [https://github.com/hikiko4ern/vk_dump]
     """
     # Создаем папку для хранения переписки
-    makedirs(f'{out_dir}/dialogs/txt/', exist_ok=True)
+    os.makedirs(f'{out_dir}/dialogs/txt/', exist_ok=True)
 
     path = '{out_dir}/dialogs/txt/{title}_{peer_id}.txt'.format(
         out_dir=out_dir,
@@ -78,7 +79,7 @@ def convert_txt(msgs, account_id, is_reply=False):
         # Добавляем текст самого сообщения (если есть), обрабатывая обращения
         if msg.text:
             text.extend([
-                sub(r'\[(?:club|id)\d+\|([^\]]+)\]', r'\1', line)
+                sub(r'\[[@]?(?:club|id)\d+\|([^\]]+)\]', r'\1', line)
                 for line in msg.text.split('\n')
             ])
 
@@ -173,3 +174,28 @@ def convert_txt(msgs, account_id, is_reply=False):
 
     # Возвращаем буффер
     return buf
+
+
+def save_html(out_dir, peer):
+    os.makedirs(f'{out_dir}/dialogs/html/', exist_ok=True)
+
+    path = '{out_dir}/dialogs/html/{title}_{peer_id}.html'.format(
+        out_dir=out_dir,
+        title=sanitize_filename(peer.title, replacement_text='_'),
+        peer_id=peer.info['peer']['id']
+    )
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    env = Environment(loader=FileSystemLoader(f'{base_dir}/templates'))
+
+    def regex_replace(s, find, replace):
+        return sub(find, replace, s)
+
+    env.filters['regex_replace'] = regex_replace
+
+    template = env.get_template('peer.html')
+
+    # Сохраняем конвертированный текст
+    with open(path, 'w') as file:
+        file.write(template.render(peer=peer))
