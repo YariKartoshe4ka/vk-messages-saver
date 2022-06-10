@@ -25,6 +25,12 @@
       margin: 25px auto;
     }
 
+    @media (max-width: 800px) {
+      #container {
+        width: 95%;
+      }
+    }
+
     .date {
       font-size: 90%;
       color: #9198a2;
@@ -40,58 +46,103 @@
       margin: 10px auto;
     }
 
-    .message {
+    .msg {
+      display: flex;
+      flex-direction: column;
+      row-gap: 3px;
       margin-top: 4px;
       border-radius: 14px;
       padding: 8px;
-      width: fit-content;
       max-width: 60%;
+      width: fit-content;
     }
 
-    .message-incoming {
+    .msg-item {
+      width: fit-content;
+    }
+
+    .msg-in {
       background-color: #ecedf1;
-      text-align: left;
     }
 
-    .message-outcoming {
+    .msg-out {
       background-color: #cce4ff;
       margin-left: auto;
       margin-right: 0;
-      text-align: right;
     }
 
-    .message-username {
+    .msg-username {
       font-size: 80%;
       color: #2d81e0;
-      text-align: left;
-      margin-bottom: 3px;
     }
 
-    .message-text {
+    .msg-text {
+      word-break: break-all;
       overflow-wrap: break-word;
-      width: 100%;
-      margin-bottom: 3px;
     }
 
-    .message-attachments {
+    .msg-atchs {
+      word-break: break-all;
+      text-align: center;
+    }
+
+    .msg-atch-photo {
       display: inline-block;
     }
-
-    .message-attachments > img {
+    .msg-atch-photo > img {
       border-radius: 14px;
       max-width: 100%;
       max-height: 300px;
-      object-fit: contain;
     }
-
-    .message-attachments > img:hover {
+    .msg-atch-photo > img:hover {
       cursor: pointer;
     }
 
-    .message-date {
+    .msg-atch-sticker > img {
+      width: 128px;
+    }
+
+    .msg-atch-gift {
+      text-align: center;
+    }
+    .msg-atch-gift > img {
+      border-radius: 14px;
+    }
+    .msg-atch-gift > span {
+      font-size: 90%;
+      color: #9198a2;
+    }
+
+    .msg-atch-audio_message > .player {
+      display: flex;
+      align-items: center;
+      column-gap: 5px;
+    }
+    .msg-atch-audio_message > .player > .btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .msg-atch-audio_message > .player > .btn-play {
+      background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20height%3D%2211%22%20viewBox%3D%220%200%2010%2011%22%20width%3D%2210%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22m2.5.5v9l7-4.5z%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E") #2D81E1 no-repeat center;
+    }
+    .msg-atch-audio_message > .player > .btn-pause {
+      background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20height%3D%2211%22%20viewBox%3D%220%200%2010%2011%22%20width%3D%2210%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22%23fff%22%20stroke%3D%22%23fff%22%3E%3Crect%20height%3D%229%22%20rx%3D%22.5%22%20width%3D%222%22%20x%3D%221.5%22%20y%3D%221%22%2F%3E%3Crect%20height%3D%229%22%20rx%3D%22.5%22%20width%3D%222%22%20x%3D%226.5%22%20y%3D%221%22%2F%3E%3C%2Fsvg%3E") #2D81E1 no-repeat center;
+    }
+
+    .msg-atch-graffiti > img {
+      max-width: 100%;
+      max-height: 300px;
+    }
+    .msg-atch-photo > img:hover {
+      cursor: pointer;
+    }
+
+    .msg-date {
       font-size: 65%;
       color: #9198a2;
-      text-align: right;
+      align-self: flex-end;
     }
   </style>
 </head>
@@ -118,15 +169,15 @@
 
       {% else %}
 
-        <div class="message message-{% if msg.from_id == ns.account_id %}outcoming{% else %}incoming{% endif %}" id="{{ msg.id | join('_') }}">
+        <div class="msg msg-{% if msg.from_id == ns.account_id %}out{% else %}in{% endif %}" id="{{ msg.id | join('_') }}">
           {% if ns.prev_msg.from_id != msg.from_id %}
-            <div class="message-username">
+            <div class="msg-item msg-username">
               {{ msg.username }}
             </div>
           {% endif %}
 
           {% if msg.text %}
-            <div class="message-text">
+            <div class="msg-item msg-text">
               {% for line in msg.text.split('\n') %}
                 {{ line | regex_replace(
                   '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
@@ -138,16 +189,44 @@
           {% endif %}
 
           {% if msg.atchs %}
-            <div class="message-attachments">
+            <div class="msg-item msg-atchs">
               {% for atch in msg.atchs %}
-                {% if atch.tp == 'photo' %}
-                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
-                {% endif %}
+                <div class="msg-atch-{{ atch.tp }}">
+                  {% if atch.tp == 'photo' %}
+                    <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                  {% elif atch.tp == 'video' %}
+                    <a>Прикреплённое видео</a>
+                  {% elif atch.tp == 'audio' %}
+                    <a>Аудио: {{ atch.title }}</a>
+                  {% elif atch.tp == 'doc' %}
+                    <a href="{{ atch.get_path(out_dir) }}">Документ: {{ atch.filename }}</a>
+                  {% elif atch.tp == 'link' %}
+                    <a href="{{ atch.url }}">Ссылка: {{ atch.title }}</a>
+                  {% elif atch.tp == 'wall' %}
+                    <a href="https://{{ atch.url }}">Запись со стены</a>
+                  {% elif atch.tp == 'wall_reply' %}
+                    <a href="https://{{ atch.url }}">Комментарий к записи</a>
+                  {% elif atch.tp == 'sticker' %}
+                    <img src="{{ atch.get_path(out_dir) }}">
+                  {% elif atch.tp == 'gift' %}
+                    <img src="{{ atch.get_path(out_dir) }}">
+                    <br>
+                    <span>Подарок</span>
+                  {% elif atch.tp == 'audio_message' %}
+                    <div class="player">
+                      <audio src="{{ atch.get_path(out_dir) }}" onended="pause_player(this.parentElement);"></audio>
+                      <div class="btn btn-play" onclick="toggle_player(this.parentElement);"></div>
+                      <a href="{{ atch.get_path(out_dir) }}">Голосовое сообщение</a>
+                    </div>
+                  {% elif atch.tp == 'graffiti' %}
+                    <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                  {% endif %}
+                </div>
               {% endfor %}
             </div>
           {% endif %}
 
-          <div class="message-date">
+          <div class="msg-item msg-date">
             {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
           </div>
         </div>
@@ -160,6 +239,31 @@
   </div>
 
   <script>
+    function play_player(player) {
+      [ audio, btn ] = player.children;
+
+      btn.classList.remove("btn-play");
+      btn.classList.add("btn-pause");
+      audio.play();
+
+      console.log("played");
+    }
+
+    function pause_player(player) {
+      [ audio, btn ] = player.children;
+
+      btn.classList.add("btn-play");
+      btn.classList.remove("btn-pause");
+      audio.pause();
+
+      console.log("paused");
+    }
+
+    function toggle_player(player) {
+      audio = player.firstElementChild;
+      if (audio.paused) play_player(player);
+      else pause_player(player);
+    }
     // document.addEventListener("DOMContentLoaded", () => {
     //   window.scrollTo(0, document.body.scrollHeight);
     // });
