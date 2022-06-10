@@ -20,6 +20,10 @@
       color: #2d81e0;
     }
 
+    .color-info {
+      color: #9198a2;
+    }
+
     #container {
       width: 60%;
       margin: 25px auto;
@@ -33,14 +37,12 @@
 
     .date {
       font-size: 90%;
-      color: #9198a2;
       margin-top: 16px;
       text-align: center;
     }
 
     .action {
       font-size: 90%;
-      color: #9198a2;
       text-align: center;
       max-width: 60%;
       margin: 10px auto;
@@ -74,6 +76,17 @@
     .msg-username {
       font-size: 80%;
       color: #2d81e0;
+    }
+
+    .msg-reply {
+      display: flex;
+      flex-direction: column;
+      row-gap: 3px;
+      border-left: 2px solid #3380D8;
+      padding-left: 5px;
+    }
+    .msg-reply:hover {
+      cursor: pointer;
     }
 
     .msg-text {
@@ -110,7 +123,6 @@
     }
     .msg-atch-gift > span {
       font-size: 90%;
-      color: #9198a2;
     }
 
     .msg-atch-audio_message > .player {
@@ -141,7 +153,6 @@
 
     .msg-date {
       font-size: 65%;
-      color: #9198a2;
       align-self: flex-end;
     }
   </style>
@@ -151,12 +162,88 @@
   <div id="container">
     {% set ns = namespace(account_id = peer.info['account']['id'], prev_msg = none) %}
 
-    {% for msg in peer.msgs %}
+    {% macro parse_msg(msg, prev_msg, is_reply=false) %}
+      {% if prev_msg is none or prev_msg.from_id != msg.from_id %}
+        <div class="msg-item msg-username">
+          {{ msg.username }}
+        </div>
+      {% endif %}
 
+      {% if not is_reply and msg.reply_msg %}
+        <div class="msg-item msg-reply" onclick="window.location = '#{{ msg.reply_msg.id | join('_') }}'">
+          {{ parse_msg(msg.reply_msg, none, true) }}
+        </div>
+      {% endif %}
+
+      {% if msg.text %}
+        <div class="msg-item msg-text">
+          {% for line in msg.text.split('\n') %}
+            {{ line | regex_replace(
+              '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
+              '<a>\\1</a>'
+            ) }}
+            <br>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if msg.atchs %}
+        {% if is_reply %}
+          <div class="msg-item msg-atchs color-info">
+            Медиавложения
+          </div>
+        {% else %}
+          <div class="msg-item msg-atchs">
+            {% for atch in msg.atchs %}
+              <div class="msg-atch-{{ atch.tp }}">
+                {% if atch.tp == 'photo' %}
+                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                {% elif atch.tp == 'video' %}
+                  <a>Прикреплённое видео</a>
+                {% elif atch.tp == 'audio' %}
+                  <a>Аудио: {{ atch.title }}</a>
+                {% elif atch.tp == 'doc' %}
+                  <a href="{{ atch.get_path(out_dir) }}">Документ: {{ atch.filename }}</a>
+                {% elif atch.tp == 'link' %}
+                  <a href="{{ atch.url }}">Ссылка: {{ atch.title }}</a>
+                {% elif atch.tp == 'wall' %}
+                  <a href="https://{{ atch.url }}">Запись со стены</a>
+                {% elif atch.tp == 'wall_reply' %}
+                  <a href="https://{{ atch.url }}">Комментарий к записи</a>
+                {% elif atch.tp == 'sticker' %}
+                  <img src="{{ atch.get_path(out_dir) }}">
+                {% elif atch.tp == 'gift' %}
+                  <img src="{{ atch.get_path(out_dir) }}">
+                  <br>
+                  <span class="color-info">Подарок</span>
+                {% elif atch.tp == 'audio_message' %}
+                  <div class="player">
+                    <audio src="{{ atch.get_path(out_dir) }}" onended="pause_player(this.parentElement);"></audio>
+                    <div class="btn btn-play" onclick="toggle_player(this.parentElement);"></div>
+                    <a href="{{ atch.get_path(out_dir) }}">Голосовое сообщение</a>
+                  </div>
+                {% elif atch.tp == 'graffiti' %}
+                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endif %}
+
+      {% if not is_reply %}
+        <div class="msg-item msg-date color-info">
+          {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
+        </div>
+      {% endif %}
+    {% endmacro %}
+
+
+    {% for msg in peer.msgs %}
       {# Пишем дату текущего сообщения, если предыдущего сообщения не было или #}
       {# если предыдущее и текущее сообщения были отправлены в разные дни #}
       {% if ns.prev_msg is none or (msg.date.day - ns.prev_msg.date.day >= 1) %}
-        <div class="date">
+        <div class="date color-info">
           {{ msg.full_date() }}
         </div>
 
@@ -165,70 +252,12 @@
 
       {# Если сообщение является сервисным, выводим текст действия #}
       {% if msg.action %}
-        <div class="action">{{ msg.action }}</div>
+        <div class="action color-info">{{ msg.action }}</div>
 
       {% else %}
 
         <div class="msg msg-{% if msg.from_id == ns.account_id %}out{% else %}in{% endif %}" id="{{ msg.id | join('_') }}">
-          {% if ns.prev_msg.from_id != msg.from_id %}
-            <div class="msg-item msg-username">
-              {{ msg.username }}
-            </div>
-          {% endif %}
-
-          {% if msg.text %}
-            <div class="msg-item msg-text">
-              {% for line in msg.text.split('\n') %}
-                {{ line | regex_replace(
-                  '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
-                  '<a>\\1</a>'
-                ) }}
-                <br>
-              {% endfor %}
-            </div>
-          {% endif %}
-
-          {% if msg.atchs %}
-            <div class="msg-item msg-atchs">
-              {% for atch in msg.atchs %}
-                <div class="msg-atch-{{ atch.tp }}">
-                  {% if atch.tp == 'photo' %}
-                    <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
-                  {% elif atch.tp == 'video' %}
-                    <a>Прикреплённое видео</a>
-                  {% elif atch.tp == 'audio' %}
-                    <a>Аудио: {{ atch.title }}</a>
-                  {% elif atch.tp == 'doc' %}
-                    <a href="{{ atch.get_path(out_dir) }}">Документ: {{ atch.filename }}</a>
-                  {% elif atch.tp == 'link' %}
-                    <a href="{{ atch.url }}">Ссылка: {{ atch.title }}</a>
-                  {% elif atch.tp == 'wall' %}
-                    <a href="https://{{ atch.url }}">Запись со стены</a>
-                  {% elif atch.tp == 'wall_reply' %}
-                    <a href="https://{{ atch.url }}">Комментарий к записи</a>
-                  {% elif atch.tp == 'sticker' %}
-                    <img src="{{ atch.get_path(out_dir) }}">
-                  {% elif atch.tp == 'gift' %}
-                    <img src="{{ atch.get_path(out_dir) }}">
-                    <br>
-                    <span>Подарок</span>
-                  {% elif atch.tp == 'audio_message' %}
-                    <div class="player">
-                      <audio src="{{ atch.get_path(out_dir) }}" onended="pause_player(this.parentElement);"></audio>
-                      <div class="btn btn-play" onclick="toggle_player(this.parentElement);"></div>
-                      <a href="{{ atch.get_path(out_dir) }}">Голосовое сообщение</a>
-                    </div>
-                  {% elif atch.tp == 'graffiti' %}
-                    <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-
-          <div class="msg-item msg-date">
-            {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
-          </div>
+          {{ parse_msg(msg, ns.prev_msg) }}
         </div>
 
       {% endif %}
