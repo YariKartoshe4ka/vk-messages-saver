@@ -89,6 +89,9 @@ class FileAttachment(Attachment):
     # Имя файла, под которым вложение будет сохранено (уникальное для каждого вложения)
     filename = None
 
+    def get_path(self, out_dir):
+        return f'{os.path.abspath(out_dir)}/attachments/{self.pf_dir}/{self.filename}'
+
     def download(self, out_dir):
         """
         Загружает и сохраняет вложение
@@ -100,10 +103,8 @@ class FileAttachment(Attachment):
         # Создаем папку для хранения вложений этого типа
         os.makedirs(f'{out_dir}/attachments/{self.pf_dir}/', exist_ok=True)
 
-        path = f'{out_dir}/attachments/{self.pf_dir}/{self.filename}'
-
         # Если файл уже скачан, пропускаем его
-        if os.path.exists(path):
+        if os.path.exists(self.get_path(out_dir)):
             return
 
         attempts = 0
@@ -127,7 +128,7 @@ class FileAttachment(Attachment):
 
                     # Скачивание происходит порциями (чанками), т.к. максимальный
                     # размер вложения VK - 2ГБ
-                    with open(path, 'wb') as file:
+                    with open(self.get_path(out_dir), 'wb') as file:
                         for chunk in r.iter_content(chunk_size=(1 << 20) * 10):
                             file.write(chunk)
 

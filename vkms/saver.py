@@ -198,4 +198,4 @@ def save_html(out_dir, peer):
 
     # Сохраняем конвертированный текст
     with open(path, 'w') as file:
-        file.write(template.render(peer=peer))
+        file.write(template.render(out_dir=out_dir, peer=peer))

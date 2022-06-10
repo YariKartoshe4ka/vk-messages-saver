@@ -32,6 +32,14 @@
       text-align: center;
     }
 
+    .action {
+      font-size: 90%;
+      color: #9198a2;
+      text-align: center;
+      max-width: 60%;
+      margin: 10px auto;
+    }
+
     .message {
       margin-top: 4px;
       border-radius: 14px;
@@ -55,11 +63,29 @@
     .message-username {
       font-size: 80%;
       color: #2d81e0;
+      text-align: left;
+      margin-bottom: 3px;
     }
 
     .message-text {
       overflow-wrap: break-word;
       width: 100%;
+      margin-bottom: 3px;
+    }
+
+    .message-attachments {
+      display: inline-block;
+    }
+
+    .message-attachments > img {
+      border-radius: 14px;
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+    }
+
+    .message-attachments > img:hover {
+      cursor: pointer;
     }
 
     .message-date {
@@ -76,36 +102,57 @@
 
     {% for msg in peer.msgs %}
 
+      {# Пишем дату текущего сообщения, если предыдущего сообщения не было или #}
+      {# если предыдущее и текущее сообщения были отправлены в разные дни #}
       {% if ns.prev_msg is none or (msg.date.day - ns.prev_msg.date.day >= 1) %}
         <div class="date">
           {{ msg.full_date() }}
         </div>
+
+        {% set ns.prev_msg = none %}
       {% endif %}
 
-      <div class="message message-{% if msg.from_id == ns.account_id %}outcoming{% else %}incoming{% endif %}">
-        {% if peer.info['peer']['id'] >= 2000000000
-          and msg.from_id != ns.account_id
-          and ns.prev_msg.from_id != msg.from_id
-        %}
-          <div class="message-username">
-            {{ msg.username }}
+      {# Если сообщение является сервисным, выводим текст действия #}
+      {% if msg.action %}
+        <div class="action">{{ msg.action }}</div>
+
+      {% else %}
+
+        <div class="message message-{% if msg.from_id == ns.account_id %}outcoming{% else %}incoming{% endif %}" id="{{ msg.id | join('_') }}">
+          {% if ns.prev_msg.from_id != msg.from_id %}
+            <div class="message-username">
+              {{ msg.username }}
+            </div>
+          {% endif %}
+
+          {% if msg.text %}
+            <div class="message-text">
+              {% for line in msg.text.split('\n') %}
+                {{ line | regex_replace(
+                  '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
+                  '<a>\\1</a>'
+                ) }}
+                <br>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if msg.atchs %}
+            <div class="message-attachments">
+              {% for atch in msg.atchs %}
+                {% if atch.tp == 'photo' %}
+                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="message-date">
+            {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
           </div>
-        {% endif %}
-
-        <div class="message-text">
-          {% for line in msg.text.split('\n') %}
-            {{ line | regex_replace(
-              '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
-              '<a>\\1</a>'
-            ) }}
-            <br>
-          {% endfor %}
         </div>
 
-        <div class="message-date">
-          {{ msg.time() }}
-        </div>
-      </div>
+      {% endif %}
 
       {% set ns.prev_msg = msg %}
 
