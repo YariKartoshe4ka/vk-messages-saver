@@ -128,6 +128,7 @@
     .msg-atchs {
       overflow-wrap: anywhere;
       text-align: center;
+      margin: 0 auto;
     }
 
     .msg-atch-photo {
@@ -178,8 +179,38 @@
       max-width: 100%;
       max-height: 300px;
     }
-    .msg-atch-photo > img:hover {
+    .msg-atch-graffiti > img:hover {
       cursor: pointer;
+    }
+
+    .msg-atch-poll > .answers {
+      margin-top: 5px;
+    }
+    .msg-atch-poll > .answers > .answer {
+      display: flex;
+      column-gap: 10px;
+      border-radius: 7px;
+      margin-bottom: 5px;
+    }
+    .msg-atch-poll > .answers > .answer > .answer-item {
+      flex-grow: 1;
+    }
+    .msg-atch-poll > .answers > .answer > .answer-text {
+      overflow-wrap: anywhere;
+      text-align: left;
+    }
+    .msg-atch-poll > .answers > .answer > .answer-rate {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      white-space: nowrap;
+    }
+    .msg-atch-poll > .answers > .answer > .answer-rate > .mark {
+      display: inline-block;
+      background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2212%22%20height%3D%229%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20fill%3D%22%235181b8%22%20d%3D%22m10.24157%2C0.24157a0.9%2C0.9%200%200%201%201.272%2C1.272l-7%2C7a0.9%2C0.9%200%200%201%20-1.272%2C0l-3%2C-3a0.9%2C0.9%200%200%201%201.272%2C-1.272l2.364%2C2.363l6.364%2C-6.363z%22%2F%3E%3C%2Fsvg%3E") no-repeat;
+      width: 12px;
+      height: 9px;
+      margin-right: 3px;
     }
 
     .msg-date {
@@ -268,6 +299,27 @@
                   <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
                 {% elif atch.tp == 'call' %}
                   <a>{{ (atch.call_type + 'звонок') | title }} ({{ atch.get_state(ns.account_id) }}{% if atch.state == 'reached' %}, {{ atch.duration }}{% endif %})</a>
+                {% elif atch.tp == 'poll' %}
+                  <h3>{{ atch.title }}</h3>
+                  <span class="color-light-gray" style="font-size: 90%;">
+                    {{ atch.anon | title }} опрос, {{ atch.mult }}
+                  </span>
+
+                  <div class="answers">
+                    {% for ans in atch.answers %}
+                      <div class="answer">
+                        <div class="answer-item answer-text">
+                          {{ ans['text'] }} <span class="color-light-gray">⋅ {{ ans['votes'] }}</span>
+                        </div>
+                        <div class="answer-item answer-rate">
+                          {% if ans['id'] in atch.answer_ids %}
+                            <span class="mark"></span>
+                          {% endif %}
+                          <span>{{ ans['rate'] | round | int }}%</span>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
                 {% endif %}
               </div>
             {% endfor %}
