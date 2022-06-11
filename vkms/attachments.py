@@ -1,5 +1,6 @@
 import logging
 import os
+from collections import deque
 from operator import itemgetter
 from threading import Thread
 
@@ -24,10 +25,23 @@ def download(out_dir, peer, nthreads):
     # Создаем список, состоящий только из скачиваемых вложений
     atchs = []
 
-    for msg in peer.msgs:
+    # Обход сообщений в ширину
+    queue = deque(peer.msgs)
+
+    while queue:
+        msg = queue.popleft()
+
+        # Добавляем все скачиваемые вложения
         for atch in msg.atchs:
             if isinstance(atch, FileAttachment):
                 atchs.append(atch)
+
+        # Если у сообщения есть пересланные, то добавляем их в очередь
+        if msg.fwd_msgs:
+            queue.extend(msg.fwd_msgs)
+
+        if msg.reply_msg:
+            queue.append(msg.reply_msg)
 
     def atch_thread():
         """Поток для загрузки вложений"""
