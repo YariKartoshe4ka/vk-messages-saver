@@ -2,6 +2,7 @@ import os
 from re import sub
 
 from jinja2 import Environment, FileSystemLoader
+from minify_html import minify
 from pathvalidate import sanitize_filename
 
 
@@ -198,4 +199,8 @@ def save_html(out_dir, peer):
 
     # Сохраняем конвертированный текст
     with open(path, 'w') as file:
-        file.write(template.render(out_dir=out_dir, peer=peer))
+        file.write(minify(
+            template.render(out_dir=out_dir, peer=peer),
+            minify_js=True,
+            minify_css=True
+        ))
