@@ -295,10 +295,7 @@
 
       {% if msg.text %}
         <p class="msg-text">
-          {{ msg.text.split('\n') | join('<br>') | regex_replace(
-              '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
-              '<a>\\1</a>'
-          ) }}
+          {{ msg.replace_mention(msg.text.split('\n') | join('<br>'), '<a>\\1</a>') }}
         </p>
       {% endif %}
 

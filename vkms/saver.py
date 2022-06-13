@@ -1,5 +1,4 @@
 import os
-from re import sub
 
 from jinja2 import Environment, FileSystemLoader
 from minify_html import minify
@@ -79,10 +78,10 @@ def convert_txt(msgs, account_id, is_reply=False):
 
         # Добавляем текст самого сообщения (если есть), обрабатывая обращения
         if msg.text:
-            text.extend([
-                sub(r'\[[@]?(?:club|id)\d+\|([^\]]+)\]', r'\1', line)
+            text.extend(
+                msg.replace_mention(line, r'\1')
                 for line in msg.text.split('\n')
-            ])
+            )
 
         # Если есть пересланные сообщения, обрабатываем их рекурсивно
         for line in filter(None, convert_txt(msg.fwd_msgs, account_id).split('\n')):
@@ -190,10 +189,7 @@ def save_html(out_dir, peer):
 
     env = Environment(loader=FileSystemLoader(f'{base_dir}/templates'))
 
-    def regex_replace(s, find, replace):
-        return sub(find, replace, s)
-
-    env.filters['regex_replace'] = regex_replace
+    # env.filters['regex_replace'] = regex_replace
 
     template = env.get_template('peer.html')
 

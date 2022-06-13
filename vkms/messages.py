@@ -1,4 +1,5 @@
 import datetime
+from re import sub
 from typing import Dict, List, Tuple
 
 from .attachments import Attachment, gen_attachment
@@ -148,6 +149,20 @@ class Message:
             Tuple[int, int, int]: Идентификатор
         """
         return (json['date'], json['from_id'], json['conversation_message_id'])
+
+    @staticmethod
+    def replace_mention(string, replace):
+        """
+        Заменяет обращения на указанную строку
+
+        Args:
+            string (str): Исходная строка
+            replace (str): Строка, на которую следует изменить обращение
+
+        Returns:
+            str: обработанная строка
+        """
+        return sub(r'\[[@]?(?:club|id)\d+\|([^\]]+)\]', replace, string)
 
     def full_date(self):
         """
