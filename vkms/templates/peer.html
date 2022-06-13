@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>{{ peer.title }}</title>
   <style>
     @font-face {
       font-family: vk-sans;
@@ -78,9 +78,9 @@
       max-width: 60%;
       width: fit-content;
     }
-
-    .msg-item {
+    .msg > * {
       width: fit-content;
+      flex: 0 1 auto;
     }
 
     .msg-in {
@@ -118,24 +118,34 @@
     }
 
     .msg-fwds {
-      display: flex;
-      flex-direction: column;
-      row-gap: 3px;
       border-left: 2px solid var(--color-gray);
       padding-left: 5px;
     }
+    .msg-fwd {
+      display: flex;
+      flex-direction: column;
+      row-gap: 3px;
+    }
+    .msg-fwd > * {
+      width: fit-content;
+      flex: 0 1 auto;
+    }
 
     .msg-atchs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 3px;
       overflow-wrap: anywhere;
       text-align: center;
-      margin: 0 auto;
+    }
+    .msg-atchs > * {
+      flex: 0 1 auto;
     }
 
-    .msg-atch-photo {
-      display: inline-block;
-    }
     .msg-atch-photo > img {
-      border-radius: 14px;
+      border-radius: 7px;
       max-width: 100%;
       max-height: 300px;
     }
@@ -151,7 +161,7 @@
       text-align: center;
     }
     .msg-atch-gift > img {
-      border-radius: 14px;
+      border-radius: 7px;
     }
     .msg-atch-gift > span {
       font-size: 90%;
@@ -162,16 +172,16 @@
       align-items: center;
       column-gap: 5px;
     }
-    .msg-atch-audio_message > .player > .btn {
+    .player-btn {
       width: 30px;
       height: 30px;
       border-radius: 50%;
       cursor: pointer;
     }
-    .msg-atch-audio_message > .player > .btn-play {
+    .player-btn-play {
       background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20height%3D%2211%22%20viewBox%3D%220%200%2010%2011%22%20width%3D%2210%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22m2.5.5v9l7-4.5z%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E") #2D81E1 no-repeat center;
     }
-    .msg-atch-audio_message > .player > .btn-pause {
+    .player-btn-pause {
       background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20height%3D%2211%22%20viewBox%3D%220%200%2010%2011%22%20width%3D%2210%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22%23fff%22%20stroke%3D%22%23fff%22%3E%3Crect%20height%3D%229%22%20rx%3D%22.5%22%20width%3D%222%22%20x%3D%221.5%22%20y%3D%221%22%2F%3E%3Crect%20height%3D%229%22%20rx%3D%22.5%22%20width%3D%222%22%20x%3D%226.5%22%20y%3D%221%22%2F%3E%3C%2Fsvg%3E") #2D81E1 no-repeat center;
     }
 
@@ -216,6 +226,49 @@
       font-size: 65%;
       align-self: flex-end;
     }
+
+    #player-bar {
+      width: 100%;
+      position: fixed;
+      top: 0;
+      padding: 3px;
+      background-color: var(--color-bg);
+      border-bottom: 2px solid #000;
+      box-sizing: border-box;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #player-bar-progress {
+      width: 0;
+      height: 2px;
+      background: var(--color-light-blue);
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+    }
+
+    #player-bar-left {
+      display: flex;
+      justify-content: flex-start;
+      column-gap: 10px;
+      align-items: center;
+    }
+    #player-bar-right {
+      display: flex;
+      justify-content: flex-end;
+      column-gap: 10px;
+      align-items: center;
+    }
+
+    .player-btn-close {
+      width: 24px;
+      height: 24px;
+      background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20fill%3D%22%23000000%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20viewBox%3D%220%200%2024%2024%22%20width%3D%2224px%22%20height%3D%2224px%22%3E%3Cpath%20d%3D%22M%204.9902344%203.9902344%20A%201.0001%201.0001%200%200%200%204.2929688%205.7070312%20L%2010.585938%2012%20L%204.2929688%2018.292969%20A%201.0001%201.0001%200%201%200%205.7070312%2019.707031%20L%2012%2013.414062%20L%2018.292969%2019.707031%20A%201.0001%201.0001%200%201%200%2019.707031%2018.292969%20L%2013.414062%2012%20L%2019.707031%205.7070312%20A%201.0001%201.0001%200%200%200%2018.980469%203.9902344%20A%201.0001%201.0001%200%200%200%2018.292969%204.2929688%20L%2012%2010.585938%20L%205.7070312%204.2929688%20A%201.0001%201.0001%200%200%200%204.9902344%203.9902344%20z%22%2F%3E%3C%2Fsvg%3E");
+    }
+    .player-btn-close:hover {
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -224,26 +277,24 @@
     {% set ns = namespace(account_id = peer.info['account']['id'], prev_msg = none) %}
 
     {% macro parse_msg(msg, prev_msg, is_reply=false, is_fwd=false) %}
-      {% if prev_msg is none or prev_msg.from_id != msg.from_id %}
-        <div class="msg-item msg-username">
-          {{ msg.username }}
-        </div>
-      {% endif %}
+      <div class="msg-username" style="display: {% if prev_msg is none or prev_msg.from_id != msg.from_id %}block{% else %}none{% endif %}">
+        {{ msg.username }}
+      </div>
 
       {% if is_fwd %}
-        <div class="msg-item msg-date-fwd color-light-gray">
+        <div class="msg-date-fwd color-light-gray">
           {{ msg.full_date() }} в {{ msg.time() }}
         </div>
       {% endif %}
 
       {% if not is_reply and msg.reply_msg %}
-        <div class="msg-item msg-reply" onclick="scroll_to_message('{{ msg.reply_msg.id | join('_') }}');">
+        <div class="msg-reply" onclick="scroll_to_message('{{ msg.reply_msg.id | join('_') }}');">
           {{ parse_msg(msg.reply_msg, none, is_reply=true) }}
         </div>
       {% endif %}
 
       {% if msg.text %}
-        <p class="msg-item msg-text">
+        <p class="msg-text">
           {{ msg.text.split('\n') | join('<br>') | regex_replace(
               '\\[[@]?(?:club|id)\\d+\\|([^\\]]+)\\]',
               '<a>\\1</a>'
@@ -253,20 +304,22 @@
 
 
       {% if msg.fwd_msgs %}
-        <div class="msg-item msg-fwds">
+        <div class="msg-fwds">
           {% for fwd_msg in msg.fwd_msgs %}
-            {{ parse_msg(fwd_msg, none, is_fwd=true) }}
+            <div class="msg-fwd">
+              {{ parse_msg(fwd_msg, none, is_fwd=true) }}
+            </div>
           {% endfor %}
         </div>
       {% endif %}
 
       {% if msg.atchs %}
         {% if is_reply %}
-          <div class="msg-item msg-atchs color-light-gray">
+          <div class="msg-atchs color-light-gray">
             Медиавложения
           </div>
         {% else %}
-          <div class="msg-item msg-atchs">
+          <div class="msg-atchs">
             {% for atch in msg.atchs %}
               <div class="msg-atch-{{ atch.tp }}">
                 {% if atch.tp == 'photo' %}
@@ -290,9 +343,9 @@
                   <br>
                   <span class="color-light-gray">Подарок</span>
                 {% elif atch.tp == 'audio_message' %}
-                  <div class="player">
+                  <div class="player" id="player-{{ msg.id | join('_') }}">
                     <audio src="{{ atch.get_path(out_dir) }}" onended="pause_player(this.parentElement);"></audio>
-                    <div class="btn btn-play" onclick="toggle_player(this.parentElement);"></div>
+                    <div class="player-btn player-btn-play" onclick="play_player(this.parentElement);"></div>
                     <a href="{{ atch.get_path(out_dir) }}">Голосовое сообщение</a>
                   </div>
                 {% elif atch.tp == 'graffiti' %}
@@ -329,7 +382,7 @@
       {% endif %}
 
       {% if not is_reply and not is_fwd %}
-        <div class="msg-item msg-date color-light-gray">
+        <div class="msg-date color-light-gray">
           {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
         </div>
       {% endif %}
@@ -350,6 +403,7 @@
       {# Если сообщение является сервисным, выводим текст действия #}
       {% if msg.action %}
         <div class="action color-light-gray">{{ msg.action }}</div>
+        {% set ns.prev_msg = none %}
 
       {% else %}
 
@@ -364,6 +418,25 @@
     {% endfor %}
   </div>
 
+  <div id="player-bar">
+    <div id="player-bar-progress"></div>
+
+    <div id="player-bar-left">
+      <div class="player-btn player-btn-play" style="display: inline-block;" id="player-bar-btn" onclick="
+        play_player(cur_player);
+      "></div>
+      <span id="player-bar-username"></span>
+    </div>
+
+    <div id="player-bar-right">
+      <div class="color-light-gray" id="player-audio-duration"></div>
+      <div class="player-btn-close" onclick="
+        pause_player(cur_player, true);
+        document.getElementById('player-bar').style.display = 'none';
+      "></div>
+    </div>
+  </div>
+
   <script>
     function scroll_to_message(msg_id) {
       window.scrollBy({
@@ -373,26 +446,61 @@
       });
     }
 
+    var cur_player = null;
+    var playerProgress = document.getElementById("player-bar-progress");
+    var playerBtn = document.getElementById("player-bar-btn");
+
     function play_player(player) {
-      [ audio, btn ] = player.children;
+      document.getElementById("player-bar").style.display = "flex";
 
-      btn.classList.remove("btn-play");
-      btn.classList.add("btn-pause");
+      let [ audio, btn ] = player.children;
+
+      if (cur_player !== player) {
+        if (cur_player)
+          pause_player(cur_player, true);
+
+        playerProgress.style.width = 0;
+        document.getElementById("player-audio-duration").textContent =
+          (Math.round(audio.duration) / 60 | 0).toString() + ':' +
+          (Math.round(audio.duration) % 60).toString().padStart(2, '0');
+
+        document.getElementById("player-bar-username").textContent =
+          document.getElementById(player.id.replace("player-", "")).
+          querySelector(".msg-username").textContent;
+      }
+      else if (!audio.paused) {
+        pause_player(player);
+        return;
+      }
+
+      playerBtn.classList.remove("player-btn-play");
+      playerBtn.classList.add("player-btn-pause");
+
+      cur_player = player;
+
+      btn.classList.remove("player-btn-play");
+      btn.classList.add("player-btn-pause");
       audio.play();
+
+      let interval = setInterval(() => {
+        if (audio.paused || audio.currentTime == audio.duration)
+          clearInterval(interval);
+
+        playerProgress.style.width = `${audio.currentTime / audio.duration * 100}%`
+      }, 200);
     }
 
-    function pause_player(player) {
-      [ audio, btn ] = player.children;
+    function pause_player(player, reset=false) {
+      playerBtn.classList.remove("player-btn-pause");
+      playerBtn.classList.add("player-btn-play");
 
-      btn.classList.add("btn-play");
-      btn.classList.remove("btn-pause");
+      let [ audio, btn ] = player.children;
+
+      btn.classList.add("player-btn-play");
+      btn.classList.remove("player-btn-pause");
       audio.pause();
-    }
 
-    function toggle_player(player) {
-      audio = player.firstElementChild;
-      if (audio.paused) play_player(player);
-      else pause_player(player);
+      if (reset) audio.currentTime = 0;
     }
   </script>
 </body>
