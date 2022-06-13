@@ -320,13 +320,13 @@
             {% for atch in msg.atchs %}
               <div class="msg-atch-{{ atch.tp }}">
                 {% if atch.tp == 'photo' %}
-                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);" alt="Прикреплённое фото">
+                  <img src="{{ atch.get_path(out_dir) | relpath }}" onclick="window.open(this.src);" alt="Прикреплённое фото">
                 {% elif atch.tp == 'video' %}
                   <a>Прикреплённое видео</a>
                 {% elif atch.tp == 'audio' %}
                   <a>Аудио: {{ atch.title }}</a>
                 {% elif atch.tp == 'doc' %}
-                  <a href="{{ atch.get_path(out_dir) }}">Документ: {{ atch.filename }}</a>
+                  <a href="{{ atch.get_path(out_dir) | relpath }}">Документ: {{ atch.filename }}</a>
                 {% elif atch.tp == 'link' %}
                   <a href="{{ atch.url }}">Ссылка: {{ atch.title }}</a>
                 {% elif atch.tp == 'wall' %}
@@ -334,19 +334,19 @@
                 {% elif atch.tp == 'wall_reply' %}
                   <a href="https://{{ atch.url }}">Комментарий к записи</a>
                 {% elif atch.tp == 'sticker' %}
-                  <img src="{{ atch.get_path(out_dir) }}" alt="Стикер">
+                  <img src="{{ atch.get_path(out_dir) | relpath }}" alt="Стикер">
                 {% elif atch.tp == 'gift' %}
-                  <img src="{{ atch.get_path(out_dir) }}" alt="Подарок">
+                  <img src="{{ atch.get_path(out_dir) | relpath }}" alt="Подарок">
                   <br>
                   <span class="color-light-gray">Подарок</span>
                 {% elif atch.tp == 'audio_message' %}
                   <div class="player" id="player-{{ msg.id | join('_') }}">
-                    <audio src="{{ atch.get_path(out_dir) }}" onended="pause_player(this.parentElement);"></audio>
+                    <audio src="{{ atch.get_path(out_dir) | relpath }}" onended="pause_player(this.parentElement);"></audio>
                     <div class="player-btn player-btn-play" onclick="play_player(this.parentElement);"></div>
-                    <a href="{{ atch.get_path(out_dir) }}">Голосовое сообщение</a>
+                    <a href="{{ atch.get_path(out_dir) | relpath }}">Голосовое сообщение</a>
                   </div>
                 {% elif atch.tp == 'graffiti' %}
-                  <img src="{{ atch.get_path(out_dir) }}" onclick="window.open(this.src);">
+                  <img src="{{ atch.get_path(out_dir) | relpath }}" onclick="window.open(this.src);">
                 {% elif atch.tp == 'call' %}
                   <a>{{ (atch.call_type + 'звонок') | title }} ({{ atch.get_state(ns.account_id) }}{% if atch.state == 'reached' %}, {{ atch.duration }}{% endif %})</a>
                 {% elif atch.tp == 'poll' %}

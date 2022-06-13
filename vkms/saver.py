@@ -189,7 +189,10 @@ def save_html(out_dir, peer):
 
     env = Environment(loader=FileSystemLoader(f'{base_dir}/templates'))
 
-    # env.filters['regex_replace'] = regex_replace
+    def relpath(path):
+        return os.path.relpath(path, start=f'{out_dir}/dialogs/html/')
+
+    env.filters['relpath'] = relpath
 
     template = env.get_template('peer.html')
 
