@@ -177,6 +177,11 @@ def convert_txt(msgs, account_id, is_reply=False):
 
 
 def save_html(out_dir, peer):
+    """
+    Сохраняет переписку в формате HTML. Верстка написана с нуля и была максимально
+    приближена к версии VK на Android. В качестве бэкграунда использован шаблонизатор
+    Jinja2
+    """
     os.makedirs(f'{out_dir}/dialogs/html/', exist_ok=True)
 
     path = '{out_dir}/dialogs/html/{title}_{peer_id}.html'.format(
@@ -187,6 +192,7 @@ def save_html(out_dir, peer):
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
+    # Инициализируем шаблонизатор
     env = Environment(loader=FileSystemLoader(f'{base_dir}/templates'))
 
     def relpath(path):
@@ -196,7 +202,7 @@ def save_html(out_dir, peer):
 
     template = env.get_template('peer.html')
 
-    # Сохраняем конвертированный текст
+    # Сохраняем конвертированный текст (предварительно сжав HTML)
     with open(path, 'w') as file:
         file.write(minify(
             template.render(out_dir=out_dir, peer=peer),

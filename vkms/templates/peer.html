@@ -80,7 +80,7 @@
     }
     .msg > * {
       width: fit-content;
-      flex: 0 1 auto;
+      flex-grow: 0;
     }
 
     .msg-in {
@@ -128,10 +128,11 @@
     }
     .msg-fwd > * {
       width: fit-content;
-      flex: 0 1 auto;
+      flex-grow: 0;
     }
 
     .msg-atchs {
+      align-self: center;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -139,9 +140,11 @@
       gap: 3px;
       overflow-wrap: anywhere;
       text-align: center;
+      width: fit-content;
     }
     .msg-atchs > * {
-      flex: 0 1 auto;
+      width: fit-content;
+      flex-grow: 0;
     }
 
     .msg-atch-photo > img {
@@ -196,26 +199,26 @@
     .msg-atch-poll > .answers {
       margin-top: 5px;
     }
-    .msg-atch-poll > .answers > .answer {
+    .poll-answer {
       display: flex;
       column-gap: 10px;
       border-radius: 7px;
       margin-bottom: 5px;
     }
-    .msg-atch-poll > .answers > .answer > .answer-item {
+    .poll-answer > * {
       flex-grow: 1;
     }
-    .msg-atch-poll > .answers > .answer > .answer-text {
+    .poll-answer-text {
       overflow-wrap: anywhere;
       text-align: left;
     }
-    .msg-atch-poll > .answers > .answer > .answer-rate {
+    .poll-answer-rate {
       display: flex;
       align-items: center;
       justify-content: flex-end;
       white-space: nowrap;
     }
-    .msg-atch-poll > .answers > .answer > .answer-rate > .mark {
+    .poll-answer-rate > .mark {
       display: inline-block;
       background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2212%22%20height%3D%229%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20fill%3D%22%235181b8%22%20d%3D%22m10.24157%2C0.24157a0.9%2C0.9%200%200%201%201.272%2C1.272l-7%2C7a0.9%2C0.9%200%200%201%20-1.272%2C0l-3%2C-3a0.9%2C0.9%200%200%201%201.272%2C-1.272l2.364%2C2.363l6.364%2C-6.363z%22%2F%3E%3C%2Fsvg%3E") no-repeat;
       width: 12px;
@@ -276,45 +279,68 @@
   <div id="container">
     {% set ns = namespace(account_id = peer.info['account']['id'], prev_msg = none) %}
 
+    {#
+      Макрос, который парсит сообщение в HTML, результат зависит от типа сообщения
+
+      Args:
+        msg (vkms.messages.Message): Объект текущего сообщения, которое необходимо спарсить
+        prev_msg (Union[vkms.messages.Message, None]): Предыдущее сообщение
+        is_reply (bool): Флаг, есть ли у текущего сообщения ответ
+        is_fwd (bool): Флаг, является ли текущее сообщение пересланным
+    #}
     {% macro parse_msg(msg, prev_msg, is_reply=false, is_fwd=false) %}
+      {#
+        Парсим имя пользователя, но делаем его невидимым, если автор предыдущего сообщения -
+        автор текущего (не удаляем, т.к. имя нужно для воспрозиведения голосового сообщения)
+      #}
       <div class="msg-username" style="display: {% if prev_msg is none or prev_msg.from_id != msg.from_id %}block{% else %}none{% endif %}">
         {{ msg.username }}
       </div>
 
+      {# Если сообщение было пересланно, добавляем точную дату отправки #}
       {% if is_fwd %}
         <div class="msg-date-fwd color-light-gray">
           {{ msg.full_date() }} в {{ msg.time() }}
         </div>
       {% endif %}
 
-      {% if not is_reply and msg.reply_msg %}
+      {# Если сообщение отправлено в ответ, и на текущее сообщение нет ответа, парсим #}
+      {% if not (is_reply or is_fwd) and msg.reply_msg %}
         <div class="msg-reply" onclick="scroll_to_message('{{ msg.reply_msg.id | join('_') }}');">
           {{ parse_msg(msg.reply_msg, none, is_reply=true) }}
         </div>
       {% endif %}
 
+      {# Парсим текст сообщения, обрабатывая переносы строк и обращения #}
       {% if msg.text %}
         <p class="msg-text">
           {{ msg.replace_mention(msg.text.split('\n') | join('<br>'), '<a>\\1</a>') }}
         </p>
       {% endif %}
 
-
+      {# Создаем дерево пересланных сообщений #}
       {% if msg.fwd_msgs %}
-        <div class="msg-fwds">
-          {% for fwd_msg in msg.fwd_msgs %}
-            <div class="msg-fwd">
-              {{ parse_msg(fwd_msg, none, is_fwd=true) }}
-            </div>
-          {% endfor %}
-        </div>
+        {% if is_reply %}
+          <div class="color-light-gray">Пересланное сообщение</div>
+        {% else %}
+          <div class="msg-fwds">
+            {% for fwd_msg in msg.fwd_msgs %}
+              <div class="msg-fwd">
+                {{ parse_msg(fwd_msg, none, is_fwd=true) }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
       {% endif %}
 
       {% if msg.atchs %}
+        {# Не парсим вложения, если у сообщения есть ответ #}
         {% if is_reply %}
           <div class="msg-atchs color-light-gray">
             Медиавложения
           </div>
+
+        {# Большинство вложений - медиа или обычный текст #}
         {% else %}
           <div class="msg-atchs">
             {% for atch in msg.atchs %}
@@ -357,12 +383,12 @@
 
                   <div class="answers">
                     {% for ans in atch.answers %}
-                      <div class="answer">
-                        <p class="answer-item answer-text">
+                      <div class="poll-answer">
+                        <p class="poll-answer-text">
                           <span>{{ ans['text'] }}</span>
                           <span class="color-light-gray">⋅ {{ ans['votes'] }}</span>
                         </p>
-                        <div class="answer-item answer-rate">
+                        <div class="poll-answer-rate">
                           {% if ans['id'] in atch.answer_ids %}
                             <span class="mark"></span>&nbsp;
                           {% endif %}
@@ -378,6 +404,7 @@
         {% endif %}
       {% endif %}
 
+      {# Добавляем время отправки сообщения #}
       {% if not is_reply and not is_fwd %}
         <div class="msg-date color-light-gray">
           {% if msg.is_edited %}ред.{% endif %} {{ msg.time() }}
@@ -404,6 +431,7 @@
 
       {% else %}
 
+        {# Вид сообщения зависит от того, является ли оно входящим или исходящим #}
         <div class="msg msg-{% if msg.from_id == ns.account_id %}out{% else %}in{% endif %}" id="{{ msg.id | join('_') }}">
           {{ parse_msg(msg, ns.prev_msg) }}
         </div>

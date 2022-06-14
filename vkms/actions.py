@@ -100,8 +100,10 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
         tds.append(td)
 
     # Ждем, пока все переписки будут скачаны
-    while sum(td.is_alive() for td in tds):
-        print(f'{round((peer_ids_len - len(peer_ids)) / peer_ids_len * 100)}%', end='\r')
+    n = sum(td.is_alive() for td in tds)
+    while n:
+        print(f'{round((peer_ids_len - len(peer_ids) - n) / peer_ids_len * 100)}%', end='\r')
+        n = sum(td.is_alive() for td in tds)
 
     # Сливаем потоки
     for td in tds:
