@@ -476,9 +476,14 @@
     var playerBtn = document.getElementById("player-bar-btn");
 
     function play_player(player) {
-      document.getElementById("player-bar").style.display = "flex";
-
       let [ audio, btn ] = player.children;
+
+      if (!audio.readyState) {
+        alert('Не удалось воспроизвести голосовое сообщение');
+        return;
+      }
+
+      document.getElementById("player-bar").style.display = "flex";
 
       if (cur_player !== player) {
         if (cur_player)
