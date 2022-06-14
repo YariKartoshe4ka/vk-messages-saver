@@ -43,5 +43,8 @@ packages = ["vkms"]
 [tool.setuptools.dynamic]
 version = {attr = "vkms.__version__"}
 
+[tool.setuptools.package-data]
+vkms = ["templates/*.html"]
+
 [tool.flake8]
 max-line-length = 100
