@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -14,7 +14,7 @@ dependencies = [
     "requests~=2.24",
     "Jinja2~=3.1",
     "minify-html~=0.8",
-    "vk>=3.0.dev"
+    "vk>=3.0"
 ]
 urls.Homepage = "https://github.com/YariKartoshe4ka/vk-messages-saver"
 readme = "README.md"
@@ -46,5 +46,11 @@ version = {attr = "vkms.__version__"}
 [tool.setuptools.package-data]
 vkms = ["templates/*.html"]
 
-[tool.flake8]
-max-line-length = 100
+[tool.setuptools_scm]
+write_to = "vkms/version.py"
+write_to_template = '''
+"""Version information"""
+
+__version__ = '{version}'
+__version_tuple__ = {version_tuple}
+'''

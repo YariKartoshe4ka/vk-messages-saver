@@ -1,8 +1,16 @@
-__pycache__/
-*.pyc
-other/
-*.json
-vkms-result*
+# Build artifacts
+/vkms/version.py
 build/
 *.egg-info
 dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Backups and sketches
+other/
+
+# Program artifacts
+vkms-result*
+*.json
