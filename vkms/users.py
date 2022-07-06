@@ -1,5 +1,7 @@
 from collections import deque
 
+from .utils import read_section
+
 
 def collect(msg, user_ids, group_ids):
     # Обход сообщений в ширину
@@ -55,7 +57,7 @@ def download(api, user_ids, group_ids):
     return
 
 
-def parse(peer):
+def parse(out_dir, peer_id):
     """
     Получает имена пользователей из JSON для дальнейшей работы
 
@@ -68,16 +70,17 @@ def parse(peer):
     """
     users = {}
 
-    # Обрабатываем пользователей
-    for json in peer['members']['users']:
-        users[json['id']] = json['first_name']
+    for user_json in read_section(out_dir, peer_id, 'users'):
+        if 'name' in user_json:
+            # Обрабатываем группы
+            users[-user_json['id']] = user_json['name']
 
-        # Если пользователь был удален, то у него не будет фамилии
-        if json.get('deactivated') != 'deleted':
-            users[json['id']] += ' ' + json['last_name']
+        else:
+            # Обрабатываем пользователей
+            users[user_json['id']] = user_json['first_name']
 
-    # Обрабатываем группы
-    for json in peer['members']['groups']:
-        users[-json['id']] = json['name']
+            # Если пользователь был удален, то у него не будет фамилии
+            if user_json.get('deactivated') != 'deleted':
+                users[user_json['id']] += ' ' + user_json['last_name']
 
     return users

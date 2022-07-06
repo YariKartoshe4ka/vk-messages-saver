@@ -1,5 +1,5 @@
 from . import messages, users
-from .utils import load_peer
+from .utils import read_section
 
 
 def download(api):
@@ -35,16 +35,13 @@ class Peer:
     """
 
     def __init__(self, out_dir, peer_id):
-        # Загружаем всю информацию из JSON
-        peer = load_peer(out_dir, peer_id)
+        # Загружаем и сохраняем информацию о переписке из JSON
+        self.account, self.info = list(read_section(out_dir, peer_id, 'peer'))
 
-        usernames = users.parse(peer)
-
-        # Сохраняем информацию о переписке
-        self.info = peer['info']
+        usernames = users.parse(out_dir, peer_id)
 
         # Парсим все сообщения переписки
-        self.msgs = messages.parse(peer, usernames)
+        self.msgs = messages.MessagesFactory(out_dir, peer_id, usernames).parse()
 
         # Сохраняем название переписки
         if self.info['peer']['type'] == 'chat':

@@ -34,7 +34,7 @@ def save_txt(out_dir, peer):
 
     # Сохраняем конвертированный текст
     with open(path, 'w') as file:
-        file.write(convert_txt(peer.msgs, peer.info['account']['id']))
+        file.write(convert_txt(peer.msgs, peer.account['id']))
 
 
 def convert_txt(msgs, account_id, is_reply=False):

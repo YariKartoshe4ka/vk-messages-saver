@@ -1,4 +1,4 @@
-from json import dump, load
+from json import dump, load, loads
 
 # Названия месяцев на русском
 months = [
@@ -66,3 +66,23 @@ def parse_peer_ids(peer_ids):
             raise ValueError('Invalid peer ID: ' + peer_id)
 
     return res
+
+
+def token_to_string(token):
+    return f"{'#' * 6} {token.upper()} {'#' * 6}"
+
+
+def read_section(out_dir, peer_id, token):
+    str_token = token_to_string(token)
+    flag = False
+
+    with open(f'{out_dir}/.json/{peer_id}.json') as file:
+        for line in file:
+            if flag:
+                if line.startswith('#' * 6):
+                    return
+
+                yield loads(line)
+
+            elif line.rstrip() == str_token:
+                flag = True

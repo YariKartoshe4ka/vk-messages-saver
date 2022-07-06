@@ -1,9 +1,9 @@
 import datetime
 from re import sub
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from .attachments import Attachment, gen_attachment
-from .utils import months
+from .utils import months, read_section
 
 
 def download(api, peer_id, max_msgs, buf=5000):
@@ -96,11 +96,11 @@ class Message:
     #     'text_parsed'
     # )
 
-    def __init__(self, json, usernames):
+    def __init__(self, create_message, msg_id, json, usernames):
         # Идентификатор сообщения. Вычисляется немного необычным путем, т.к.
         # сообщения полученные из объектов `reply_message` и `fwd_messages`
         # могут иметь другие поля ID
-        self.id: tuple = Message.get_id_by_json(json)
+        self.id: int = msg_id
 
         # Получение имени отправителя по его ID
         self.from_id = json['from_id']
@@ -134,7 +134,7 @@ class Message:
         self.reply_msg: Message = None
 
         if 'reply_message' in json:
-            self.reply_msg = gen_message(json['reply_message'], usernames)
+            self.reply_msg = create_message(json['reply_message'])
 
         # Флаг, является ли актуальным сообщение (для исчезающих сообщений)
         self.is_expired = json.get('is_expired')
@@ -150,7 +150,7 @@ class Message:
 
         # Список пересланных сообщений, вместе образуют дерево
         self.fwd_msgs: List[Message] = [
-            gen_message(fwd_msg_json, usernames)
+            create_message(fwd_msg_json)
             for fwd_msg_json in json.get('fwd_messages', [])
         ]
 
@@ -206,43 +206,42 @@ class Message:
         return self.date.strftime('%H:%M')
 
 
-# Словарь для кеширования сообщений в формате id-сообщение
-_msgs: Dict[Tuple[int, int, int], Message] = {}
+class MessagesFactory:
+    _MAX_CACHE_SIZE = 3000
+    _CACHE_CHUNK = 500
 
+    def __init__(self, out_dir, peer_id, usernames):
+        self.__leaked_ids: int = 0
+        self._out_dir = out_dir
+        self._peer_id = peer_id
+        self._usernames = usernames
 
-def parse(peer, usernames):
-    """
-    Парсит сообщения из JSON в объекты `Message` для дальнейшей работы
+        # Словарь для кеширования сообщений в формате id-сообщение
+        self.__cache: Dict[int, Message] = {}
 
-    Args:
-        peer (dict): Объект (словарь) переписки, в который уже
-            были сохранены скачанные сообщения
-        usernames (dict): Словарь для получения имени пользователя по его ID
+    def _free_cache(self):
+        if len(self.__cache) == self._MAX_CACHE_SIZE:
+            msg_ids = list(self.__cache.keys())
 
-    Returns:
-        List[Message]: Список объектов сообщений
-    """
-    # Очистка кеша сообщений
-    _msgs.clear()
+            for i in range(self._CACHE_CHUNK):
+                del self.__cache[msg_ids[i]]
 
-    # Генерация сообщений
-    return [gen_message(msg, usernames) for msg in peer['messages']]
+    def create_message(self, msg_json):
+        self._free_cache()
 
+        if 'id' not in msg_json:
+            self.__leaked_ids += 1
 
-def gen_message(json, usernames):
-    """
-    Генерирует и кеширует созданное сообщение по его ID
+        msg_id = msg_json.get('id', -self.__leaked_ids)
 
-    Args:
-        json (dict): Объект сообщения полученный ранее благодаря VK API
-        usernames (dict): Словарь для получения имени пользователя по его ID
+        if msg_id in self.__cache:
+            return self.__cache[msg_id]
 
-    Returns:
-        Message: Сгенерированный объект сообщения
-    """
-    msg_id = Message.get_id_by_json(json)
+        msg = Message(self.create_message, msg_id, msg_json, self._usernames)
+        self.__cache[msg_id] = msg
 
-    if msg_id not in _msgs:
-        _msgs[msg_id] = Message(json, usernames)
+        return msg
 
-    return _msgs[msg_id]
+    def parse(self):
+        for msg_json in read_section(self._out_dir, self._peer_id, 'messages'):
+            yield self.create_message(msg_json)
