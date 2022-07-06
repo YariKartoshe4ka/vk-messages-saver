@@ -1,25 +1,9 @@
 from collections import deque
 
 
-def download(api, peer):
-    """
-    Загружает имена участников переписки
-
-    Args:
-        api (vk.API): Объект, через который происходит обращение к
-            методам VK API
-        peer (dict): Объект (словарь) переписки, в который необходимо
-            сохранить скачанные имена
-    """
-    # Идентификаторы пользователей и групп
-    user_ids = set()
-    group_ids = set()
-
+def collect(msg, user_ids, group_ids):
     # Обход сообщений в ширину
-    queue = deque(peer['messages'])
-
-    if peer['info']['peer']['id'] < 2000000000:
-        queue.append({'from_id': peer['info']['peer']['id']})
+    queue = deque([msg])
 
     while queue:
         msg = queue.popleft()
@@ -40,8 +24,8 @@ def download(api, peer):
             if from_id < 0:
                 group_ids.add(eff_id)
 
-            # Если идентификатор > 0, добавляем к пользователям
-            else:
+            # Если идентификатор > 0 но меньше 2000000000, добавляем к пользователям
+            elif from_id < 2000000000:
                 user_ids.add(eff_id)
 
         # Если у сообщения есть пересланные, то добавляем их в очередь
@@ -51,17 +35,24 @@ def download(api, peer):
         if 'reply_message' in msg:
             queue.append(msg['reply_message'])
 
-    # Получаем имена пользователей и групп
-    res = {'users': [], 'groups': []}
 
+def download(api, user_ids, group_ids):
+    """
+    Загружает имена участников переписки
+
+    Args:
+        api (vk.API): Объект, через который происходит обращение к
+            методам VK API
+        peer (dict): Объект (словарь) переписки, в который необходимо
+            сохранить скачанные имена
+    """
     if user_ids:
-        res['users'].extend(api.users.get(user_ids=','.join(user_ids)))
+        yield from api.users.get(user_ids=','.join(user_ids))
 
     if group_ids:
-        res['groups'].extend(api.groups.getById(group_ids=','.join(group_ids)))
+        yield from api.groups.getById(group_ids=','.join(group_ids))
 
-    # Сохраняем имена
-    peer['members'] = res
+    return
 
 
 def parse(peer):

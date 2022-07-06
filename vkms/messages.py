@@ -6,7 +6,7 @@ from .attachments import Attachment, gen_attachment
 from .utils import months
 
 
-def download(api, peer_id, peer, max_msgs):
+def download(api, peer_id, max_msgs, buf=5000):
     """
     Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
@@ -15,28 +15,36 @@ def download(api, peer_id, peer, max_msgs):
             методам VK API
         peer_id (int): Идентификатор переписки, сообщения которой
             необходимо скачать
-        peer (dict): Объект (словарь) переписки, в который необходимо
-            сохранить скачанные сообщения
     """
-    # Получаем часть сообщений
-    res = api.messages.getHistory(count=200, peer_id=peer_id)
-    msgs = res['items']
+    max_chunk = 200
 
-    processed = len(msgs)
+    # Получаем количество сообщений в переписке, чтобы сформировать необходимый offset
+    res = api.messages.getHistory(count=0, peer_id=peer_id)
+
+    msgs = []
+    processed = 0
+
+    max_msgs = min(max_msgs, res['count'])
 
     # Повторяем действия выше, пока все сообщения не будут загружены
-    while processed < min(res['count'], max_msgs):
-        res = api.messages.getHistory(offset=processed, count=200, peer_id=peer_id)
+    while processed < max_msgs:
+        res = api.messages.getHistory(
+            offset=res['count'] - processed - min(max_msgs - processed, max_chunk),
+            count=min(max_msgs - processed, max_chunk),
+            peer_id=peer_id,
+            rev=1
+        )
         msgs += res['items']
 
         processed += len(res['items'])
+        max_msgs = min(max_msgs, res['count'])
 
-    # Переворачиваем сообщения, чтобы в начале
-    # оказались старые, а в конце - новые
-    msgs.reverse()
+        # Чтобы не нагружать память, возвращаем сообщения частями
+        if not processed % buf:
+            yield from msgs
+            msgs.clear()
 
-    # Сохраняем сообщения
-    peer['messages'] = msgs
+    yield from msgs
 
 
 # Шаблоны текстов сервисных действий в формате тип-текст
@@ -72,6 +80,21 @@ class Message:
         json (dict): Объект сообщения полученный ранее благодаря VK API
         usernames (dict): Словарь для получения имени пользователя по его ID
     """
+    # __slots__ = (
+    #     'id',
+    #     'from_id',
+    #     'username',
+    #     'date',
+    #     'action',
+    #     'text',
+    #     'reply_msg',
+    #     'is_expired',
+    #     'is_edited',
+    #     'geo',
+    #     'fwd_msgs',
+    #     'atchs',
+    #     'text_parsed'
+    # )
 
     def __init__(self, json, usernames):
         # Идентификатор сообщения. Вычисляется немного необычным путем, т.к.

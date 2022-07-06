@@ -1,4 +1,5 @@
 import logging
+from json import dumps
 from os import listdir
 from threading import Thread
 from time import sleep
@@ -7,7 +8,6 @@ import vk
 from vk.exceptions import VkAPIError
 
 from . import attachments, messages, peers, saver, users
-from .utils import dump_peer
 
 
 def dump(out_dir, include, exclude, token, nthreads, max_msgs):
@@ -74,21 +74,33 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
 
             logging.info(f'Processing peer {peer_id}')
 
-            # Сохраняем информацию о переписке и владельце страницы
-            peer = {'info': peer_by_id[peer_id]}
-            peer['info']['account'] = account
+            with open(f"{out_dir}/.json/{peer_id}.json", 'w', encoding='utf-8') as file:
+                # Сохраняем информацию о переписке и владельце страницы
+                print('###### PEER', file=file)
 
-            try:
-                # Сохраняем все сообщения и информацию об участниках переписки
-                messages.download(api, peer_id, peer, max_msgs)
-                users.download(api, peer)
+                print(dumps(account), file=file)
+                print(dumps(peer_by_id[peer_id]), file=file)
 
-            except VkAPIError as e:
-                logging.error(f'Downloading peer {peer_id} failed: {e}')
-                return
+                try:
+                    # Сохраняем все сообщения и информацию об участниках переписки
+                    print('###### MESSAGES', file=file)
 
-            # Записываем все в JSON
-            dump_peer(out_dir, peer)
+                    user_ids = set()
+                    group_ids = set()
+
+                    for msg in messages.download(api, peer_id, max_msgs):
+                        print(dumps(msg), file=file)
+                        users.collect(msg, user_ids, group_ids)
+
+                    if user_ids or group_ids:
+                        print('###### USERS', file=file)
+
+                        for user in users.download(api, user_ids, group_ids):
+                            print(dumps(user), file=file)
+
+                except VkAPIError as e:
+                    logging.error(f'Downloading peer {peer_id} failed: {e}')
+                    return
 
     # Список всех потоков
     tds = []
