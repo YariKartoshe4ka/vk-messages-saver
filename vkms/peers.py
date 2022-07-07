@@ -1,5 +1,5 @@
+from . import database as db
 from . import messages, users
-from .utils import read_section
 
 
 def download(api):
@@ -34,14 +34,14 @@ class Peer:
         peer_id (int): Идентификатор переписки, которую нужно представить
     """
 
-    def __init__(self, out_dir, peer_id):
+    def __init__(self, session):
         # Загружаем и сохраняем информацию о переписке из JSON
-        self.account, self.info = list(read_section(out_dir, peer_id, 'peer'))
+        self.account, self.info = session.query(db.Peer.account, db.Peer.info).one()
 
-        usernames = users.parse(out_dir, peer_id)
+        usernames = users.parse(session)
 
         # Парсим все сообщения переписки
-        self.msgs = messages.MessagesFactory(out_dir, peer_id, usernames).parse()
+        self.msgs = messages.MessagesFactory(session, usernames).parse()
 
         # Сохраняем название переписки
         if self.info['peer']['type'] == 'chat':

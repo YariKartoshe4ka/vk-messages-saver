@@ -1,6 +1,6 @@
 from collections import deque
 
-from .utils import read_section
+from . import database as db
 
 
 def collect(msg, user_ids, group_ids):
@@ -49,15 +49,15 @@ def download(api, user_ids, group_ids):
             сохранить скачанные имена
     """
     if user_ids:
-        yield from api.users.get(user_ids=','.join(user_ids))
+        yield api.users.get(user_ids=','.join(user_ids))
 
     if group_ids:
-        yield from api.groups.getById(group_ids=','.join(group_ids))
+        yield api.groups.getById(group_ids=','.join(group_ids))
 
     return
 
 
-def parse(out_dir, peer_id):
+def parse(session):
     """
     Получает имена пользователей из JSON для дальнейшей работы
 
@@ -70,17 +70,17 @@ def parse(out_dir, peer_id):
     """
     users = {}
 
-    for user_json in read_section(out_dir, peer_id, 'users'):
-        if 'name' in user_json:
+    for user_id, user_json in session.query(db.User.id, db.User.json):
+        if user_id < 0:
             # Обрабатываем группы
-            users[-user_json['id']] = user_json['name']
+            users[user_id] = user_json['name']
 
         else:
             # Обрабатываем пользователей
-            users[user_json['id']] = user_json['first_name']
+            users[user_id] = user_json['first_name']
 
             # Если пользователь был удален, то у него не будет фамилии
             if user_json.get('deactivated') != 'deleted':
-                users[user_json['id']] += ' ' + user_json['last_name']
+                users[user_id] += ' ' + user_json['last_name']
 
     return users

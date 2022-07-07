@@ -1,5 +1,4 @@
 import logging
-from json import JSONDecodeError, dumps
 from os import listdir
 from threading import Thread
 from time import sleep
@@ -7,8 +6,9 @@ from time import sleep
 import vk
 from vk.exceptions import VkAPIError
 
-from . import attachments, messages, peers, saver, users
-from .utils import token_to_string
+from . import attachments
+from . import database as db
+from . import messages, peers, saver, users
 
 
 def dump(out_dir, include, exclude, token, nthreads, max_msgs):
@@ -75,33 +75,39 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
 
             logging.info(f'Processing peer {peer_id}')
 
-            with open(f"{out_dir}/.json/{peer_id}.json", 'w', encoding='utf-8') as file:
-                # Сохраняем информацию о переписке и владельце страницы
-                print(token_to_string('peer'), file=file)
+            session = db.connect(f"{out_dir}/.sqlite/{peer_id}.sqlite")
 
-                print(dumps(account), file=file)
-                print(dumps(peer_by_id[peer_id]), file=file)
+            # Сохраняем информацию о переписке и владельце страницы
+            session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
+            session.flush()
 
-                try:
-                    # Сохраняем все сообщения и информацию об участниках переписки
-                    print(token_to_string('messages'), file=file)
+            try:
+                # Сохраняем все сообщения и информацию об участниках переписки
+                user_ids = set()
+                group_ids = set()
 
-                    user_ids = set()
-                    group_ids = set()
+                for chunk in messages.download(api, peer_id, max_msgs):
+                    msgs = []
 
-                    for msg in messages.download(api, peer_id, max_msgs):
-                        print(dumps(msg), file=file)
-                        users.collect(msg, user_ids, group_ids)
+                    for msg_json in chunk:
+                        msg = db.Message(json=msg_json)
+                        msgs.append(msg)
 
-                    if user_ids or group_ids:
-                        print(token_to_string('users'), file=file)
+                        users.collect(msg_json, user_ids, group_ids)
 
-                        for user in users.download(api, user_ids, group_ids):
-                            print(dumps(user), file=file)
+                    session.bulk_save_objects(msgs)
+                    msgs.clear()
 
-                except VkAPIError as e:
-                    logging.error(f'Downloading peer {peer_id} failed: {e}')
-                    return
+                if user_ids or group_ids:
+                    for chunk in users.download(api, user_ids, group_ids):
+                        session.bulk_save_objects(db.User(user_json) for user_json in chunk)
+
+            except VkAPIError as e:
+                logging.error(f'Downloading peer {peer_id} failed: {e}')
+                session.rollback()
+                return
+
+            session.commit()
 
     # Список всех потоков
     tds = []
@@ -153,14 +159,12 @@ def parse(out_dir, include, exclude, fmt):
     for peer_id in peer_ids:
         logging.info(f'Processing peer {peer_id}')
 
+        session = db.connect(f'{out_dir}/.sqlite/{peer_id}.sqlite')
+
         print(f'{round(processed / len(peer_ids) * 100)}%', end='\r')
 
-        try:
-            peer = peers.Peer(out_dir, peer_id)
-        except JSONDecodeError:
-            logging.error(f'Loading peer {peer_id} failed: JSON may be corrupted')
-        else:
-            saver.save(out_dir, fmt, peer)
+        peer = peers.Peer(session)
+        saver.save(out_dir, fmt, peer)
 
         processed += 1
 

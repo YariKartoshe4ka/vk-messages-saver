@@ -2,8 +2,9 @@ import datetime
 from re import sub
 from typing import Dict, List
 
+from . import database as db
 from .attachments import Attachment, gen_attachment
-from .utils import months, read_section
+from .utils import months
 
 
 def download(api, peer_id, max_msgs, buf=5000):
@@ -29,7 +30,7 @@ def download(api, peer_id, max_msgs, buf=5000):
     # Повторяем действия выше, пока все сообщения не будут загружены
     while processed < max_msgs:
         res = api.messages.getHistory(
-            offset=res['count'] - processed - min(max_msgs - processed, max_chunk),
+            offset=res['count'] - min(max_msgs, res['count']) + processed,
             count=min(max_msgs - processed, max_chunk),
             peer_id=peer_id,
             rev=1
@@ -41,10 +42,10 @@ def download(api, peer_id, max_msgs, buf=5000):
 
         # Чтобы не нагружать память, возвращаем сообщения частями
         if not processed % buf:
-            yield from msgs
+            yield msgs
             msgs.clear()
 
-    yield from msgs
+    yield msgs
 
 
 # Шаблоны текстов сервисных действий в формате тип-текст
@@ -210,10 +211,9 @@ class MessagesFactory:
     _MAX_CACHE_SIZE = 3000
     _CACHE_CHUNK = 500
 
-    def __init__(self, out_dir, peer_id, usernames):
+    def __init__(self, session, usernames):
         self.__leaked_ids: int = 0
-        self._out_dir = out_dir
-        self._peer_id = peer_id
+        self._session = session
         self._usernames = usernames
 
         # Словарь для кеширования сообщений в формате id-сообщение
@@ -243,5 +243,6 @@ class MessagesFactory:
         return msg
 
     def parse(self):
-        for msg_json in read_section(self._out_dir, self._peer_id, 'messages'):
+        for msg_json, in self._session.query(db.Message.json):
+            print(type(msg_json))
             yield self.create_message(msg_json)

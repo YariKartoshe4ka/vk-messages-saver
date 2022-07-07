@@ -24,6 +24,7 @@ def main():
     args = parse_args()
 
     makedirs(f'{args.out_dir}/.json/', exist_ok=True)
+    makedirs(f'{args.out_dir}/.sqlite/', exist_ok=True)
 
     _setup_logging(args.out_dir)
     logging.info('VKMS started')

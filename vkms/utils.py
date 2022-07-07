@@ -1,5 +1,3 @@
-from json import dump, load, loads
-
 # Названия месяцев на русском
 months = [
     ' ', 'января', 'февраля', 'марта',
@@ -7,34 +5,6 @@ months = [
     'августа', 'сентября', 'октября',
     'ноября', 'декабря'
 ]
-
-
-def load_peer(out_dir, peer_id):
-    """
-    Загружает переписку из скачанного JSON по указанному идентификатору
-
-    Args:
-        out_dir (str): Абсолютный путь к каталогу, в котором находится
-            результат работы программы
-        peer_id (int): Идентификатор переписки, JSON которой
-            необходимо загрузить
-    """
-    with open(f'{out_dir}/.json/{peer_id}.json', 'r') as file:
-        return load(file)
-
-
-def dump_peer(out_dir, peer):
-    """
-    Выгружает объект переписки в JSON
-
-    Args:
-        out_dir (str): Абсолютный путь к каталогу, в котором находится
-            результат работы программы
-        peer (dict): Объект (словарь) переписки, которую необходимо
-            выгрузить в JSON
-    """
-    with open(f"{out_dir}/.json/{peer['info']['peer']['id']}.json", 'w') as file:
-        dump(peer, file)
 
 
 def parse_peer_ids(peer_ids):
@@ -66,23 +36,3 @@ def parse_peer_ids(peer_ids):
             raise ValueError('Invalid peer ID: ' + peer_id)
 
     return res
-
-
-def token_to_string(token):
-    return f"{'#' * 6} {token.upper()} {'#' * 6}"
-
-
-def read_section(out_dir, peer_id, token):
-    str_token = token_to_string(token)
-    flag = False
-
-    with open(f'{out_dir}/.json/{peer_id}.json') as file:
-        for line in file:
-            if flag:
-                if line.startswith('#' * 6):
-                    return
-
-                yield loads(line)
-
-            elif line.rstrip() == str_token:
-                flag = True
