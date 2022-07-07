@@ -10,11 +10,12 @@ authors = [
     { name = "Yaroslav Kikel", email = "yaroslav.kikel.06@inbox.ru"}
 ]
 dependencies = [
-    "pathvalidate~=2.5",
-    "requests~=2.24",
-    "Jinja2~=3.1",
-    "minify-html~=0.8",
-    "vk>=3.0"
+    "pathvalidate<3,>=2.5",
+    "requests<3,>=2.24",
+    "Jinja2<4,>=3.1",
+    "minify-html<1,>=0.8",
+    "vk<4,>=3.0",
+    "SQLAlchemy<2,>=1.4"
 ]
 urls.Homepage = "https://github.com/YariKartoshe4ka/vk-messages-saver"
 readme = "README.md"

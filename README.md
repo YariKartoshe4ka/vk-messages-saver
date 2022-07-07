@@ -4,7 +4,6 @@
 [![Releases](https://img.shields.io/github/v/release/YariKartoshe4ka/vk-messages-saver?style=flat-square)](https://github.com/YariKartoshe4ka/vk-messages-saver/releases)
 [![VK API](https://img.shields.io/static/v1?label=API&message=5.131&color=a938e4&labelColor=000000&logo=vk&style=flat-square)](https://dev.vk.com/)
 [![PyPI](https://img.shields.io/pypi/pyversions/vkms?style=flat-square)](https://pypi.org/project/vkms/)
-![](https://img.shields.io/codacy/grade/7d64b70fa82f4aac9e61ae88d6d9a2b2?style=flat-square)
 
 Утилита для сохранения переписок ВКонтакте
 
