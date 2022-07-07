@@ -254,6 +254,5 @@ class MessagesFactory:
         return msg
 
     def parse(self):
-        for msg_json, in self._session.query(db.Message.json):
-            print(type(msg_json))
+        for msg_json, in self._session.query(db.Message.json).yield_per(self._MAX_CACHE_SIZE):
             yield self.create_message(msg_json)
