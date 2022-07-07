@@ -37,7 +37,8 @@ def main():
             args.exclude,
             args.token,
             args.threads,
-            args.max_msgs
+            args.max_msgs,
+            args.append
         )
 
     elif args.action == 'parse':

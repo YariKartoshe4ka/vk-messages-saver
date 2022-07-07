@@ -7,7 +7,7 @@ from .attachments import Attachment, gen_attachment
 from .utils import months
 
 
-def download(api, peer_id, max_msgs, buf=5000):
+def download(api, peer_id, max_msgs, start_msg_id, buf=5000):
     """
     Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
@@ -20,7 +20,7 @@ def download(api, peer_id, max_msgs, buf=5000):
     max_chunk = 200
 
     # Получаем количество сообщений в переписке, чтобы сформировать необходимый offset
-    res = api.messages.getHistory(count=0, peer_id=peer_id)
+    res = api.messages.getHistory(count=1, peer_id=peer_id)
 
     msgs = []
     processed = 0
@@ -28,13 +28,24 @@ def download(api, peer_id, max_msgs, buf=5000):
     max_msgs = min(max_msgs, res['count'])
 
     # Повторяем действия выше, пока все сообщения не будут загружены
-    while processed < max_msgs:
-        res = api.messages.getHistory(
-            offset=res['count'] - min(max_msgs, res['count']) + processed,
-            count=min(max_msgs - processed, max_chunk),
-            peer_id=peer_id,
-            rev=1
-        )
+    while processed < max_msgs and res['items']:
+        if start_msg_id is None:
+            res = api.messages.getHistory(
+                offset=res['count'] - min(max_msgs, res['count']) + processed,
+                count=min(max_msgs - processed, max_chunk),
+                peer_id=peer_id,
+                rev=1
+            )
+
+        else:
+            res = api.messages.getHistory(
+                offset=-(processed + min(max_msgs - processed, max_chunk)),
+                count=min(max_msgs - processed, max_chunk),
+                peer_id=peer_id,
+                start_message_id=start_msg_id
+            )
+            res['items'].reverse()
+
         msgs += res['items']
 
         processed += len(res['items'])

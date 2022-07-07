@@ -4,6 +4,7 @@ from threading import Thread
 from time import sleep
 
 import vk
+from sqlalchemy import func
 from vk.exceptions import VkAPIError
 
 from . import attachments
@@ -11,7 +12,7 @@ from . import database as db
 from . import messages, peers, saver, users
 
 
-def dump(out_dir, include, exclude, token, nthreads, max_msgs):
+def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
     """
     Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
 
@@ -77,16 +78,34 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
 
             session = db.connect(f"{out_dir}/.sqlite/{peer_id}.sqlite")
 
-            # Сохраняем информацию о переписке и владельце страницы
-            session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
-            session.flush()
+            if not append:
+                db.Base.metadata.drop_all(session.bind)
+                db.Base.metadata.create_all(session.bind)
+
+                # Сохраняем информацию о переписке и владельце страницы
+                session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
+                session.flush()
 
             try:
                 # Сохраняем все сообщения и информацию об участниках переписки
                 user_ids = set()
                 group_ids = set()
 
-                for chunk in messages.download(api, peer_id, max_msgs):
+                pres_user_ids = {
+                    id for id, in
+                    session.query(db.User.id).filter(db.User.id > 0)
+                }
+                pres_group_ids = {
+                    abs(id) for id, in
+                    session.query(db.User.id).filter(db.User.id < 0)
+                }
+
+                start_msg_id, _ = session.query(
+                    db.Message.id,
+                    func.max(db.Message.date)
+                ).one_or_none()
+
+                for chunk in messages.download(api, peer_id, max_msgs, start_msg_id):
                     msgs = []
 
                     for msg_json in chunk:
@@ -96,9 +115,11 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs):
                         users.collect(msg_json, user_ids, group_ids)
 
                     session.bulk_save_objects(msgs)
-                    msgs.clear()
 
                 if user_ids or group_ids:
+                    user_ids -= pres_user_ids
+                    group_ids -= pres_group_ids
+
                     for chunk in users.download(api, user_ids, group_ids):
                         session.bulk_save_objects(db.User(user_json) for user_json in chunk)
 
@@ -143,7 +164,7 @@ def parse(out_dir, include, exclude, fmt):
         fmt (str): Формат, в котором следует сохранять переписки
     """
     # Получаем идентификаторы всех скачанных переписок
-    peer_ids = {int(file.rstrip('.json')) for file in listdir(f'{out_dir}/.json/')}
+    peer_ids = {int(file.rstrip('.sqlite')) for file in listdir(f'{out_dir}/.sqlite/')}
 
     # Выбираем нужные переписки
     if include:

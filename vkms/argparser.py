@@ -15,6 +15,7 @@ def parse_args():
 
     parser.add_argument(
         '-o',
+        '--out',
         dest='out_dir',
         metavar='OUTDIR',
         default='vkms-result',
@@ -62,14 +63,19 @@ def parse_args():
         help='Number of threads to download peers, defaults to 2'
     )
     parser_dump.add_argument(
-        '-m',
-        '--max-msgs',
-        metavar='MAX',
+        '--max',
+        dest='max_msgs',
         type=int,
         default=75000,
         help='Maximum number of messages to be saved in each conversation. '
              'Increasing the parameter will consume more RAM. '
              'Defaults to 75000'
+    )
+    parser_dump.add_argument(
+        '-a',
+        '--append',
+        action='store_true',
+        help='Don\'t re-download the peer, but only new messages'
     )
 
     parser_parse = subparsers.add_parser(

@@ -19,16 +19,13 @@ def collect(msg, user_ids, group_ids):
             from_ids.append(msg['action']['member_id'])
 
         for from_id in from_ids:
-            # Идентификаторы групп передаются как положительные числа
-            eff_id = str(abs(from_id))
-
             # Если идентификатор < 0, добавляем к группам
             if from_id < 0:
-                group_ids.add(eff_id)
+                group_ids.add(abs(from_id))
 
             # Если идентификатор > 0 но меньше 2000000000, добавляем к пользователям
             elif from_id < 2000000000:
-                user_ids.add(eff_id)
+                user_ids.add(from_id)
 
         # Если у сообщения есть пересланные, то добавляем их в очередь
         if 'fwd_messages' in msg:
@@ -49,10 +46,10 @@ def download(api, user_ids, group_ids):
             сохранить скачанные имена
     """
     if user_ids:
-        yield api.users.get(user_ids=','.join(user_ids))
+        yield api.users.get(user_ids=','.join(map(str, user_ids)))
 
     if group_ids:
-        yield api.groups.getById(group_ids=','.join(group_ids))
+        yield api.groups.getById(group_ids=','.join(map(str, group_ids)))
 
     return
 
