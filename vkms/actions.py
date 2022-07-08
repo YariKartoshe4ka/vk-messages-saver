@@ -23,6 +23,9 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
         exclude (set): Множество идентификаторов переписок, которые не нужно сохранять
         token (str): Токен доступа к VK API
         nthreads (int): Количество потоков, загружающих переписки
+        max_msgs (int):  Кол-во сообщений, которое нужно сохранить (может быть меньше
+            заявленного, если переписка содержит меньше сообщений)
+        append (bool): Режим дозаписи новых сообщений
     """
     # Получаем объект для работы с VK API
     class API(vk.API):
@@ -79,6 +82,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
             session = db.connect(f"{out_dir}/.sqlite/{peer_id}.sqlite")
 
             if not append:
+                # Если переписку нужно загрузить заново, полностью очищаем БД
                 db.Base.metadata.drop_all(session.bind)
                 db.Base.metadata.create_all(session.bind)
 
@@ -100,6 +104,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
                     session.query(db.User.id).filter(db.User.id < 0)
                 }
 
+                # Идентификатор последнего сообщения переписки
                 start_msg_id, _ = session.query(
                     db.Message.id,
                     func.max(db.Message.date)
@@ -117,6 +122,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
                     session.bulk_save_objects(msgs)
 
                 if user_ids or group_ids:
+                    # Исключаем пользователей, которые уже есть в БД
                     user_ids -= pres_user_ids
                     group_ids -= pres_group_ids
 
@@ -128,6 +134,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
                 session.rollback()
                 return
 
+            # Все хорошо, сохраняем изменения
             session.commit()
 
     # Список всех потоков
