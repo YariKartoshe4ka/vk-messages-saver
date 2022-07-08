@@ -12,7 +12,7 @@ from . import database as db
 from . import messages, peers, saver, users
 
 
-def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
+def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_json):
     """
     Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
 
@@ -26,6 +26,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
         max_msgs (int):  Кол-во сообщений, которое нужно сохранить (может быть меньше
             заявленного, если переписка содержит меньше сообщений)
         append (bool): Режим дозаписи новых сообщений
+        export_json (bool): Дополнительно экспортировать данные о переписке а JSON формате
     """
     # Получаем объект для работы с VK API
     class API(vk.API):
@@ -136,6 +137,10 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append):
 
             # Все хорошо, сохраняем изменения
             session.commit()
+
+            # Если нужно, дополнительно экспортируем информацию в JSON
+            if export_json:
+                peers.export_json(out_dir, session)
 
     # Список всех потоков
     tds = []

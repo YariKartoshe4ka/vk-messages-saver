@@ -1,3 +1,5 @@
+from json import dumps
+
 from . import database as db
 from . import messages, users
 
@@ -22,6 +24,36 @@ def download(api):
         peers += [item['conversation'] for item in res['items']]
 
     return peers
+
+
+def export_json(out_dir, session):
+    """
+    Экспортирует данные из SQLite в немного модифицированный JSON
+
+    Args:
+        out_dir (str): Абсолютный путь к каталогу, в котором находится
+            результат работы программы
+        session: Открытая сессия к БД нужной переписки
+    """
+    peer = session.query(db.Peer).one()
+
+    with open(f'{out_dir}/.json/{peer.id}.json', 'w') as file:
+        # Экспортируем информацию о переписке и владельце
+        print(f"{'-' * 6} PEER {'-' * 6}", file=file)
+        print(dumps(peer.account), file=file)
+        print(dumps(peer.info), file=file)
+
+        # Экспортируем все сообщения
+        print(f"{'-' * 6} MESSAGES {'-' * 6}", file=file)
+
+        for msg_json, in session.query(db.Message.json).yield_per(5000):
+            print(dumps(msg_json), file=file)
+
+        # Экспортируем всех участников
+        print(f"{'-' * 6} USERS {'-' * 6}", file=file)
+
+        for user_json, in session.query(db.User.json).yield_per(5000):
+            print(dumps(user_json), file=file)
 
 
 class Peer:

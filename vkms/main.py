@@ -38,7 +38,8 @@ def main():
             args.token,
             args.threads,
             args.max_msgs,
-            args.append
+            args.append,
+            args.export_json
         )
 
     elif args.action == 'parse':

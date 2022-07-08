@@ -47,7 +47,7 @@ def parse_args():
     parser_dump = subparsers.add_parser(
         'dump',
         help='Save only the necessary information (VK API method outputs) '
-             'in a machine-friendly format (JSON) for further processing'
+             'in a machine-friendly format (SQLite + JSON) for further processing'
     )
 
     parser_dump.add_argument(
@@ -65,17 +65,22 @@ def parse_args():
     parser_dump.add_argument(
         '--max',
         dest='max_msgs',
+        metavar='MAX_MESSAGES',
         type=int,
-        default=75000,
+        default=100000,
         help='Maximum number of messages to be saved in each conversation. '
-             'Increasing the parameter will consume more RAM. '
-             'Defaults to 75000'
+             'Defaults to 100000'
     )
     parser_dump.add_argument(
         '-a',
         '--append',
         action='store_true',
         help='Don\'t re-download the peer, but only new messages'
+    )
+    parser_dump.add_argument(
+        '--export-json',
+        action='store_true',
+        help='Additionally export peer information in JSON format'
     )
 
     parser_parse = subparsers.add_parser(
