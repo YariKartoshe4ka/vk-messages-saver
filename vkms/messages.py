@@ -1,24 +1,26 @@
 import datetime
 from re import sub
-from typing import Dict, List
 
 from . import database as db
-from .attachments import Attachment, gen_attachment
+from .attachments import gen_attachment
 from .utils import months
 
 
-def download(api, peer_id, max_msgs, start_msg_id, buf=5000):
+def download(api, peer_id, max_msgs, start_msg_id):
     """
     Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
     Args:
-        api (vk.API): Объект, через который происходит обращение к
-            методам VK API
-        peer_id (int): Идентификатор переписки, сообщения которой
-            необходимо скачать
-    """
-    max_chunk = 200
+        api (vk.API): Объект, через который происходит обращение к методам VK API
+        peer_id (int): Идентификатор переписки, сообщения которой необходимо скачать
+        max_msgs (int): Кол-во сообщений, которое нужно сохранить (может быть меньше
+            заявленного, если переписка содержит меньше сообщений)
+        start_msg_id (int): Идентификатор сообщения, после которого следует сохранять
+            сообщения (используется для дозаписи новых сообщений)
 
+    Yields:
+        list: Чанк загруженных сообщений, размер не превышает 5000
+    """
     # Получаем количество сообщений в переписке, чтобы сформировать необходимый offset
     res = api.messages.getHistory(count=1, peer_id=peer_id)
 
@@ -32,15 +34,15 @@ def download(api, peer_id, max_msgs, start_msg_id, buf=5000):
         if start_msg_id is None:
             res = api.messages.getHistory(
                 offset=res['count'] - min(max_msgs, res['count']) + processed,
-                count=min(max_msgs - processed, max_chunk),
+                count=min(max_msgs - processed, 200),
                 peer_id=peer_id,
                 rev=1
             )
 
         else:
             res = api.messages.getHistory(
-                offset=-(processed + min(max_msgs - processed, max_chunk)),
-                count=min(max_msgs - processed, max_chunk),
+                offset=-(processed + min(max_msgs - processed, 200)),
+                count=min(max_msgs - processed, 200),
                 peer_id=peer_id,
                 start_message_id=start_msg_id
             )
@@ -52,7 +54,7 @@ def download(api, peer_id, max_msgs, start_msg_id, buf=5000):
         max_msgs = min(max_msgs, res['count'])
 
         # Чтобы не нагружать память, возвращаем сообщения частями
-        if not processed % buf:
+        if not processed % 5000:
             yield msgs
             msgs.clear()
 
@@ -67,7 +69,7 @@ def download(api, peer_id, max_msgs, start_msg_id, buf=5000):
 #     text: Новое название беседы
 #     msg: Текст закрепленного сообщения
 #
-_actions: Dict[str, str] = {
+_actions = {
     'chat_photo_update': '{member} обновил(-a) фотографию беседы',
     'chat_photo_remove': '{member} удалил(-a) фотографию беседы',
     'chat_create': '{member} создал(-а) беседу "{text}"',
@@ -89,41 +91,40 @@ class Message:
     Документация: [https://dev.vk.com/reference/objects/message]
 
     Args:
+        msg_id (int): Идентификатор сообщения
         json (dict): Объект сообщения полученный ранее благодаря VK API
         usernames (dict): Словарь для получения имени пользователя по его ID
+        create_message (callable): Функция для создания себе подобных сообщений
     """
-    # __slots__ = (
-    #     'id',
-    #     'from_id',
-    #     'username',
-    #     'date',
-    #     'action',
-    #     'text',
-    #     'reply_msg',
-    #     'is_expired',
-    #     'is_edited',
-    #     'geo',
-    #     'fwd_msgs',
-    #     'atchs',
-    #     'text_parsed'
-    # )
+    __slots__ = (
+        'id',
+        'from_id',
+        'username',
+        'date',
+        'action',
+        'text',
+        'reply_msg',
+        'is_expired',
+        'is_edited',
+        'geo',
+        'fwd_msgs',
+        'atchs'
+    )
 
-    def __init__(self, create_message, msg_id, json, usernames):
-        # Идентификатор сообщения. Вычисляется немного необычным путем, т.к.
-        # сообщения полученные из объектов `reply_message` и `fwd_messages`
-        # могут иметь другие поля ID
-        self.id: int = msg_id
+    def __init__(self, msg_id, json, usernames, create_message):
+        # Идентификатор сообщения
+        self.id = msg_id
 
         # Получение имени отправителя по его ID
         self.from_id = json['from_id']
-        self.username: str = usernames[self.from_id]
+        self.username = usernames[self.from_id]
 
         # Получение времени отправления сообщения из формата Unixtime
         self.date = datetime.datetime.fromtimestamp(json['date'])
 
         # Информация о сервисном действии, `self.action` будет содержать
         # уже готовый текст или `None`
-        self.action: str | None = None
+        self.action = None
 
         if 'action' in json:
             # Если пользователь исключил сам себя, значит он вышел из беседы
@@ -140,13 +141,13 @@ class Message:
             )
 
         # Текст сообщения (может быть пустым)
-        self.text: str = json['text']
+        self.text = json['text']
 
         # Объект сообщения, в ответ на которое было отправлено текущее
-        self.reply_msg: Message = None
-
-        if 'reply_message' in json:
-            self.reply_msg = create_message(json['reply_message'])
+        self.reply_msg = (
+            create_message(json['reply_message'])
+            if 'reply_message' in json else None
+        )
 
         # Флаг, является ли актуальным сообщение (для исчезающих сообщений)
         self.is_expired = json.get('is_expired')
@@ -155,35 +156,19 @@ class Message:
         self.is_edited = 'update_time' in json
 
         # Координаты геолокации (если есть)
-        self.geo = None
-
-        if 'geo' in json:
-            self.geo = json['geo']['coordinates'].values()
+        self.geo = json['geo']['coordinates'].values() if 'geo' in json else None
 
         # Список пересланных сообщений, вместе образуют дерево
-        self.fwd_msgs: List[Message] = [
+        self.fwd_msgs = [
             create_message(fwd_msg_json)
             for fwd_msg_json in json.get('fwd_messages', [])
         ]
 
         # Список медиавложений сообщения (фото, аудио и т.п.)
-        self.atchs: List[Attachment] = [
+        self.atchs = [
             gen_attachment(atch_json)
             for atch_json in json['attachments']
         ]
-
-    @staticmethod
-    def get_id_by_json(json):
-        """
-        Функция для получения идентификатора сообщения из JSON
-
-        Args:
-            json (dict): Объект сообщения полученный ранее благодаря VK API
-
-        Returns:
-            Tuple[int, int, int]: Идентификатор
-        """
-        return (json['date'], json['from_id'], json['conversation_message_id'])
 
     @staticmethod
     def replace_mention(string, replace):
@@ -200,59 +185,69 @@ class Message:
         return sub(r'\[[@]?(?:club|id)\d+\|([^\]]+)\]', replace, string)
 
     def full_date(self):
-        """
-        Возвращает полную дату (день, месяц, год) отправки сообщения
-
-        Returns:
-            str: Полная дата
-        """
+        # Возвращает полную дату (день, месяц, год) отправки сообщения
         return self.date.strftime('%d {} %Y'.format(months[self.date.month]))
 
     def time(self):
-        """
-        Возвращает время (час, минута) отправки сообщения
-
-        Returns:
-            str: Время отправки
-        """
+        # Возвращает время (час, минута) отправки сообщения
         return self.date.strftime('%H:%M')
 
 
 class MessagesFactory:
+    """
+    Класс отвечающий за создание сообщений. Реализован с оглядкой на эффективное
+    использование памяти
+
+    Args:
+        session: Открытая сессия к БД нужной переписки
+        usernames (dict): Словарь для получения имени пользователя по его ID
+    """
     _MAX_CACHE_SIZE = 3000
     _CACHE_CHUNK = 500
 
     def __init__(self, session, usernames):
-        self.__leaked_ids: int = 0
+        self.__leaked_ids = 0
         self._session = session
         self._usernames = usernames
 
         # Словарь для кеширования сообщений в формате id-сообщение
-        self.__cache: Dict[int, Message] = {}
+        self.__cache = {}
 
     def _free_cache(self):
+        # Если размер кэша на пределе, очищаем его
         if len(self.__cache) == self._MAX_CACHE_SIZE:
             msg_ids = list(self.__cache.keys())
 
+            # Удаляем самые старые сообщения
             for i in range(self._CACHE_CHUNK):
                 del self.__cache[msg_ids[i]]
 
     def create_message(self, msg_json):
+        # Очищаем кэш, чтобы освободить память
         self._free_cache()
 
+        # Если у сообщения нет ID, задаем ему мнимое
         if 'id' not in msg_json:
             self.__leaked_ids += 1
 
         msg_id = msg_json.get('id', -self.__leaked_ids)
 
+        # Сообщение находится в кэше, не нужно его создавать заново
         if msg_id in self.__cache:
             return self.__cache[msg_id]
 
-        msg = Message(self.create_message, msg_id, msg_json, self._usernames)
+        # Создаем новое сообщение и добавляем в кэш
+        msg = Message(msg_id, msg_json, self._usernames, self.create_message)
         self.__cache[msg_id] = msg
 
         return msg
 
     def parse(self):
+        """
+        Парсит все доступные в БД сообщения
+
+        Yields:
+            Message: текущий объект сообщения
+        """
         for msg_json, in self._session.query(db.Message.json).yield_per(self._MAX_CACHE_SIZE):
             yield self.create_message(msg_json)
