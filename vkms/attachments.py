@@ -275,22 +275,18 @@ class Call(Attachment):
         )
 
     def get_state(self, owner_id):
-        if self.state == 'reached':
-            return 'завершен'
-
-        if owner_id == self.initiator_id:
-            if self.state == 'canceled_by_initiator':
-                return 'отменен'
-
-            if self.state == 'canceled_by_receiver':
-                return 'отклонен'
-
-        else:
-            if self.state == 'canceled_by_initiator':
-                return 'пропущен'
-
-            if self.state == 'canceled_by_receiver':
-                return 'отменен'
+        return {
+            owner_id: {
+                'reached': 'завершен',
+                'canceled_by_initiator': 'пропущен',
+                'canceled_by_receiver': 'отменен'
+            },
+            self.initiator_id: {
+                'reached': 'завершен',
+                'canceled_by_initiator': 'отменен',
+                'canceled_by_receiver': 'отклонен'
+            }
+        }[owner_id][self.state]
 
 
 class Poll(Attachment):
@@ -313,13 +309,5 @@ _attachments = {
 
 
 def gen_attachment(json):
-    """
-    Генерирует вложение по его JSON
-
-    Args:
-        json (dict): Объект вложения, полученный ранее благодаря VK API
-
-    Returns:
-        Attachment: Сгенерированный объект вложения
-    """
+    # Генерирует вложение по его JSON
     return _attachments.get(json['type'], Attachment)(json[json['type']])

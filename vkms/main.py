@@ -1,7 +1,7 @@
 import logging
 from os import makedirs
 
-from . import actions
+from . import __version__, actions
 from .argparser import parse_args
 
 
@@ -27,7 +27,7 @@ def main():
     makedirs(f'{args.out_dir}/.sqlite/', exist_ok=True)
 
     _setup_logging(args.out_dir)
-    logging.info('VKMS started')
+    logging.info(f'VKMS {__version__} started')
     logging.info(f'Arguments: {args}')
 
     if args.action == 'dump':

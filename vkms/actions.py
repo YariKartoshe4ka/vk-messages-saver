@@ -232,14 +232,12 @@ def atch(out_dir, include, exclude, nthreads):
     for peer_id in peer_ids:
         logging.info(f'Processing peer {peer_id}')
 
+        session = db.connect(f'{out_dir}/.sqlite/{peer_id}.sqlite')
+
         print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
 
-        try:
-            peer = peers.Peer(out_dir, peer_id)
-        except Exception:
-            logging.error(f'Loading peer {peer_id} failed: JSON may be corrupted')
-        else:
-            attachments.download(out_dir, peer, nthreads)
+        peer = peers.Peer(session)
+        attachments.download(out_dir, peer, nthreads)
 
         peer_ids_cnt += 1
 
