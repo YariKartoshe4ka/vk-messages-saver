@@ -278,7 +278,7 @@
 
 <body>
   <div id="container">
-    {% set ns = namespace(account_id = peer.info['account']['id'], prev_msg = none) %}
+    {% set ns = namespace(account_id = peer.account['id'], prev_msg = none) %}
 
     {#
       Макрос, который парсит сообщение в HTML, результат зависит от типа сообщения
@@ -307,7 +307,7 @@
 
       {# Если сообщение отправлено в ответ, и на текущее сообщение нет ответа, парсим #}
       {% if not (is_reply or is_fwd) and msg.reply_msg %}
-        <div class="msg-reply" onclick="scroll_to_message('{{ msg.reply_msg.id | join('_') }}');">
+        <div class="msg-reply" onclick="scroll_to_message('{{ msg.reply_msg.id }}');">
           {{ parse_msg(msg.reply_msg, none, is_reply=true) }}
         </div>
       {% endif %}
@@ -367,7 +367,7 @@
                   <br>
                   <span class="color-light-gray">Подарок</span>
                 {% elif atch.tp == 'audio_message' %}
-                  <div class="player" id="player-{{ msg.id | join('_') }}">
+                  <div class="player" id="player-{{ msg.id }}">
                     <audio src="{{ atch.get_path(out_dir) | relpath }}" onended="pause_player(this.parentElement);"></audio>
                     <div class="player-btn player-btn-play" onclick="play_player(this.parentElement);"></div>
                     <a href="{{ atch.get_path(out_dir) | relpath }}">Голосовое сообщение</a>
@@ -433,7 +433,7 @@
       {% else %}
 
         {# Вид сообщения зависит от того, является ли оно входящим или исходящим #}
-        <div class="msg msg-{% if msg.from_id == ns.account_id %}out{% else %}in{% endif %}" id="{{ msg.id | join('_') }}">
+        <div class="msg msg-{% if msg.from_id == ns.account_id %}out{% else %}in{% endif %}" id="{{ msg.id }}">
           {{ parse_msg(msg, ns.prev_msg) }}
         </div>
 
