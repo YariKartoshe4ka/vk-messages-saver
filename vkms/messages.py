@@ -81,7 +81,8 @@ _actions = {
     'chat_invite_user_by_link': '{member} присоединился(-ась) к беседе по ссылке',
     'conversation_style_update': '{member} изменил(-а) оформление чата',
     'chat_screenshot': '{member} сделал(-а) скриншот беседы',
-    '_chat_leave_user': '{member} вышел(-а) из беседы'
+    '_chat_leave_user': '{member} вышел(-а) из беседы',
+    '_chat_return_user': '{member} вернулся(-ась) в беседу'
 }
 
 
@@ -131,6 +132,11 @@ class Message:
             if (json['action']['type'] == 'chat_kick_user'
                     and json['from_id'] == json['action']['member_id']):
                 json['action']['type'] = '_chat_leave_user'
+
+            # Если пользователь пригласил сам себя, значит он вернулся в беседу
+            if (json['action']['type'] == 'chat_invite_user'
+                    and json['from_id'] == json['action']['member_id']):
+                json['action']['type'] = '_chat_return_user'
 
             # Генерация текста из шаблона
             self.action = _actions.get(json['action']['type'], 'unknown action').format(

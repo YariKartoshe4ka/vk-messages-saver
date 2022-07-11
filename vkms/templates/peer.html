@@ -297,7 +297,7 @@
         Парсим имя пользователя, но делаем его невидимым, если автор предыдущего сообщения -
         автор текущего (не удаляем, т.к. имя нужно для воспрозиведения голосового сообщения)
       #}
-      <div class="msg-username" style="display: {% if prev_msg is none or prev_msg.from_id != msg.from_id %}block{% else %}none{% endif %}">
+      <div class="msg-username" style="display: {% if prev_msg is none or prev_msg.from_id != msg.from_id or prev_msg.action %}block{% else %}none{% endif %}">
         {{ msg.username }}
       </div>
 
