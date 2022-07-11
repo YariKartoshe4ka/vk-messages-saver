@@ -19,6 +19,7 @@
       --color-light-blue: #2d81e0;
       --color-gray: #97b2cf;
       --color-light-gray: #9198a2;
+      --color-player-bar: #000;
     }
 
     * {
@@ -30,6 +31,7 @@
 
     html, body {
       width: 100%;
+      background-color: var(--color-bg);
     }
 
     a {
@@ -237,7 +239,7 @@
       top: 0;
       padding: 3px;
       background-color: var(--color-bg);
-      border-bottom: 2px solid #000;
+      border-bottom: 2px solid var(--color-player-bar);
       box-sizing: border-box;
       display: none;
       justify-content: space-between;
@@ -268,7 +270,8 @@
     .player-btn-close {
       width: 24px;
       height: 24px;
-      background: url("data:image/svg+xml;charset=utf-8,%3Csvg%20fill%3D%22%23000000%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20viewBox%3D%220%200%2024%2024%22%20width%3D%2224px%22%20height%3D%2224px%22%3E%3Cpath%20d%3D%22M%204.9902344%203.9902344%20A%201.0001%201.0001%200%200%200%204.2929688%205.7070312%20L%2010.585938%2012%20L%204.2929688%2018.292969%20A%201.0001%201.0001%200%201%200%205.7070312%2019.707031%20L%2012%2013.414062%20L%2018.292969%2019.707031%20A%201.0001%201.0001%200%201%200%2019.707031%2018.292969%20L%2013.414062%2012%20L%2019.707031%205.7070312%20A%201.0001%201.0001%200%200%200%2018.980469%203.9902344%20A%201.0001%201.0001%200%200%200%2018.292969%204.2929688%20L%2012%2010.585938%20L%205.7070312%204.2929688%20A%201.0001%201.0001%200%200%200%204.9902344%203.9902344%20z%22%2F%3E%3C%2Fsvg%3E");
+      background-color: var(--color-player-bar);
+      mask-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20viewBox%3D%220%200%2024%2024%22%20width%3D%2224px%22%20height%3D%2224px%22%3E%3Cpath%20d%3D%22M%204.9902344%203.9902344%20A%201.0001%201.0001%200%200%200%204.2929688%205.7070312%20L%2010.585938%2012%20L%204.2929688%2018.292969%20A%201.0001%201.0001%200%201%200%205.7070312%2019.707031%20L%2012%2013.414062%20L%2018.292969%2019.707031%20A%201.0001%201.0001%200%201%200%2019.707031%2018.292969%20L%2013.414062%2012%20L%2019.707031%205.7070312%20A%201.0001%201.0001%200%200%200%2018.980469%203.9902344%20A%201.0001%201.0001%200%200%200%2018.292969%204.2929688%20L%2012%2010.585938%20L%205.7070312%204.2929688%20A%201.0001%201.0001%200%200%200%204.9902344%203.9902344%20z%22%2F%3E%3C%2Fsvg%3E");
     }
     .player-btn-close:hover {
       cursor: pointer;
@@ -533,6 +536,40 @@
 
       if (reset) audio.currentTime = 0;
     }
+
+    const themes = {
+      light: {
+        "--color-bg": "#fff",
+        "--color-bg-msg-in": "#ecedf1",
+        "--color-bg-msg-out": "#cce4ff",
+        "--color-text": "#000",
+        "--color-player-bar": "#000"
+      },
+      dark: {
+        "--color-bg": "#191919",
+        "--color-bg-msg-out": "#454648",
+        "--color-bg-msg-in": "#2c2d2f",
+        "--color-text": "#fff",
+        "--color-player-bar": "#9198a2"
+      }
+    };
+    var cur_theme = "light";
+
+    function switch_theme() {
+      let root = document.documentElement;
+
+      const themes_keys = Object.keys(themes);
+      cur_theme = themes_keys[(themes_keys.indexOf(cur_theme) + 1) % themes_keys.length];;
+
+      for (const [ name, value ] of Object.entries(themes[cur_theme])) {
+        console.log(name, value);
+        root.style.setProperty(name, value);
+      }
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.keyCode == 84)
+        switch_theme();
+    });
   </script>
 </body>
 </html>
