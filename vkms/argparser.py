@@ -66,10 +66,10 @@ def parse_args():
         '--max',
         dest='max_msgs',
         metavar='MAX_MESSAGES',
-        type=int,
+        type=lambda x: float('inf') if x.lower() == 'all' else int(x),
         default=100000,
         help='Maximum number of messages to be saved in each conversation. '
-             'Defaults to 100000'
+             'Defaults to 100000. Pass "all" to save the whole conversation'
     )
     parser_dump.add_argument(
         '-a',
