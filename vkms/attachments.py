@@ -114,6 +114,10 @@ class FileAttachment(Attachment):
             out_dir (str): Абсолютный путь к каталогу, в котором находится
                 результат работы программы
         """
+        if not self.url:
+            logging.warning('Downloading attachment skipped: URL not specified')
+            return
+
         # Создаем папку для хранения вложений этого типа
         os.makedirs(f'{out_dir}/attachments/{self.pf_dir}/', exist_ok=True)
 
@@ -162,7 +166,9 @@ class Photo(FileAttachment):
     pf_dir = 'photos'
 
     def __init__(self, json):
-        self.url = max(json['sizes'], key=itemgetter('width', 'height'))['url']
+        if json.get('sizes'):
+            self.url = max(json['sizes'], key=itemgetter('width', 'height'))['url']
+
         self.filename = f"{json['owner_id']}_{json['id']}.jpg"
 
 
@@ -214,7 +220,10 @@ class WallReply(Attachment):
     tp = 'wall_reply'
 
     def __init__(self, json):
-        self.url = f"vk.com/wall{json['owner_id']}_{json['post_id']}?reply={json['id']}"
+        if json.get('deleted'):
+            self.url = 'комментарий удалён'
+        else:
+            self.url = f"vk.com/wall{json['owner_id']}_{json['post_id']}?reply={json['id']}"
 
 
 class Sticker(FileAttachment):

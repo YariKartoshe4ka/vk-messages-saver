@@ -102,7 +102,7 @@ def _convert_txt_msg(msg, account_id, *, is_reply=False):
     fwd_msgs_file.seek(0)
 
     for line in fwd_msgs_file:
-        if line:
+        if line.rstrip():
             lines.append('| ' + line.rstrip())
 
     # Добавляем место/геолокацию (если есть)
