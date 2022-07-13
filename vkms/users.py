@@ -1,6 +1,8 @@
 from collections import deque
+from itertools import chain
 
 from . import database as db
+from .utils import chunks
 
 
 def collect(msg, user_ids, group_ids):
@@ -40,16 +42,26 @@ def download(api, user_ids, group_ids):
     Загружает имена участников переписки
 
     Args:
-        api (vk.API): Объект, через который происходит обращение к
-            методам VK API
-        peer (dict): Объект (словарь) переписки, в который необходимо
-            сохранить скачанные имена
-    """
-    if user_ids:
-        yield api.users.get(user_ids=','.join(map(str, user_ids)))
+        api (vk.API): Объект, через который происходит обращение к методам VK API
+        user_ids (set): Идентификаторы участников (пользователей) беседы
+        group_ids (set): Идентификаторы участников (групп) беседы
 
-    if group_ids:
-        yield api.groups.getById(group_ids=','.join(map(str, group_ids)))
+    Yields:
+        list: Чанк загруженных пользователей, размер не превышает 5000
+    """
+    # Сначала загружаем пользователей
+    for chunk in chunks(user_ids, 5000):
+        yield list(chain.from_iterable(
+            api.users.get(user_ids=','.join(map(str, subchunk)))
+            for subchunk in chunks(chunk, 1000)
+        ))
+
+    # Затем загружаем сообщества
+    for chunk in chunks(group_ids, 5000):
+        yield list(chain.from_iterable(
+            api.groups.getById(group_ids=','.join(map(str, subchunk)))
+            for subchunk in chunks(chunk, 1000)
+        ))
 
     return
 

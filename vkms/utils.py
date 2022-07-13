@@ -1,3 +1,5 @@
+from itertools import islice
+
 # Названия месяцев на русском
 months = [
     ' ', 'января', 'февраля', 'марта',
@@ -36,3 +38,8 @@ def parse_peer_ids(peer_ids):
             raise ValueError('Invalid peer ID: ' + peer_id)
 
     return res
+
+
+def chunks(iterable, size):
+    for i in range(0, len(iterable), size):
+        yield list(islice(iterable, i, i + size))
