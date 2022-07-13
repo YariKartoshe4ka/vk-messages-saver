@@ -208,45 +208,21 @@ class MessagesFactory:
         session: Открытая сессия к БД нужной переписки
         usernames (dict): Словарь для получения имени пользователя по его ID
     """
-    _MAX_CACHE_SIZE = 3000
-    _CACHE_CHUNK = 500
 
     def __init__(self, session, usernames):
         self.__leaked_ids = 0
         self._session = session
         self._usernames = usernames
 
-        # Словарь для кеширования сообщений в формате id-сообщение
-        self.__cache = {}
-
-    def _free_cache(self):
-        # Если размер кэша на пределе, очищаем его
-        if len(self.__cache) == self._MAX_CACHE_SIZE:
-            msg_ids = list(self.__cache.keys())
-
-            # Удаляем самые старые сообщения
-            for i in range(self._CACHE_CHUNK):
-                del self.__cache[msg_ids[i]]
-
     def create_message(self, msg_json):
-        # Очищаем кэш, чтобы освободить память
-        self._free_cache()
-
         # Если у сообщения нет ID, задаем ему мнимое
         if 'id' not in msg_json:
             self.__leaked_ids += 1
 
         msg_id = msg_json.get('id', -self.__leaked_ids)
 
-        # Сообщение находится в кэше, не нужно его создавать заново
-        if msg_id in self.__cache:
-            return self.__cache[msg_id]
-
-        # Создаем новое сообщение и добавляем в кэш
-        msg = Message(msg_id, msg_json, self._usernames, self.create_message)
-        self.__cache[msg_id] = msg
-
-        return msg
+        # Создаем и возвращаем новое сообщение
+        return Message(msg_id, msg_json, self._usernames, self.create_message)
 
     def parse(self):
         """
@@ -255,5 +231,5 @@ class MessagesFactory:
         Yields:
             Message: текущий объект сообщения
         """
-        for msg_json, in self._session.query(db.Message.json).yield_per(self._MAX_CACHE_SIZE):
+        for msg_json, in self._session.query(db.Message.json).yield_per(5000):
             yield self.create_message(msg_json)
