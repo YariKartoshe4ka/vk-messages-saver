@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from os import getenv
+from pathlib import Path
 
 from .utils import parse_peer_ids
 
@@ -18,6 +19,7 @@ def parse_args():
         '--out',
         dest='out_dir',
         metavar='OUTDIR',
+        type=Path,
         default='vkms-result',
         help='Output directory where the materials are saved'
     )

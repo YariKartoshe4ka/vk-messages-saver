@@ -1,5 +1,5 @@
-import os
 from io import StringIO
+from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from minify_html import minify
@@ -25,10 +25,9 @@ def save_txt(out_dir, peer):
     Ссылка: [https://github.com/hikiko4ern/vk_dump]
     """
     # Создаем папку для хранения переписки
-    os.makedirs(f'{out_dir}/dialogs/txt/', exist_ok=True)
+    (out_dir / 'dialogs/txt').mkdir(parents=True, exist_ok=True)
 
-    path = '{out_dir}/dialogs/txt/{title}_{peer_id}.txt'.format(
-        out_dir=out_dir,
+    path = out_dir / 'dialogs/txt/{title}_{peer_id}.txt'.format(
         title=sanitize_filename(peer.title, replacement_text='_'),
         peer_id=peer.info['peer']['id']
     )
@@ -181,21 +180,20 @@ def save_html(out_dir, peer):
     приближена к версии VK на Android. В качестве бэкграунда использован шаблонизатор
     Jinja2
     """
-    os.makedirs(f'{out_dir}/dialogs/html/', exist_ok=True)
+    (out_dir / 'dialogs/html').mkdir(parents=True, exist_ok=True)
 
-    path = '{out_dir}/dialogs/html/{title}_{peer_id}.html'.format(
-        out_dir=out_dir,
+    path = out_dir / 'dialogs/html/{title}_{peer_id}.html'.format(
         title=sanitize_filename(peer.title, replacement_text='_'),
         peer_id=peer.info['peer']['id']
     )
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = Path(__file__).parent.resolve()
 
     # Инициализируем шаблонизатор
-    env = Environment(loader=FileSystemLoader(f'{base_dir}/templates'))
+    env = Environment(loader=FileSystemLoader(base_dir / 'templates'))
 
     def relpath(path):
-        return os.path.relpath(path, start=f'{out_dir}/dialogs/html/')
+        return Path(path).relative_to(start=out_dir / 'dialogs/html')
 
     env.filters['relpath'] = relpath
 

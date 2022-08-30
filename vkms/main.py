@@ -1,5 +1,4 @@
 import logging
-from os import makedirs
 
 from . import __version__, actions
 from .argparser import parse_args
@@ -8,7 +7,7 @@ from .argparser import parse_args
 def _setup_logging(out_dir):
     logging.getLogger('vk').setLevel(logging.WARNING)
     logging.basicConfig(
-        filename=f'{out_dir}/logs.txt',
+        filename=out_dir / 'logs.txt',
         filemode='a',
         format='[%(levelname)s] (%(asctime)s.%(msecs)03d - '
                '%(module)s - %(threadName)s): %(message)s',
@@ -23,8 +22,8 @@ def main():
     """
     args = parse_args()
 
-    makedirs(f'{args.out_dir}/.json/', exist_ok=True)
-    makedirs(f'{args.out_dir}/.sqlite/', exist_ok=True)
+    (args.out_dir / '.json').mkdir(parents=True, exist_ok=True)
+    (args.out_dir / '.sqlite').mkdir(parents=True, exist_ok=True)
 
     _setup_logging(args.out_dir)
     logging.info(f'VKMS {__version__} started')

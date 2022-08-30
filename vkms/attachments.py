@@ -20,7 +20,7 @@ def download(out_dir, peer, nthreads):
         nthreads (int): Количество потоков, загружающих вложения
     """
     # Создаем папку для хранения вложений
-    os.makedirs(f'{out_dir}/attachments/', exist_ok=True)
+    (out_dir / 'attachments').mkdir(parents=True, exist_ok=True)
 
     # Создаем список, состоящий только из скачиваемых вложений
     atchs = []
@@ -119,7 +119,7 @@ class FileAttachment(Attachment):
             return
 
         # Создаем папку для хранения вложений этого типа
-        os.makedirs(f'{out_dir}/attachments/{self.pf_dir}/', exist_ok=True)
+        (out_dir / 'attachments' / self.pf_dir).mkdir(parents=True, exist_ok=True)
 
         # Если файл уже скачан, пропускаем его
         if os.path.exists(self.get_path(out_dir)):

@@ -1,5 +1,4 @@
 import logging
-from os import listdir
 from threading import Thread
 from time import sleep
 
@@ -44,7 +43,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
         account = api.users.get()[0]
     except VkAPIError:
         print('Failed to load base information. '
-              f'See logs for details: {out_dir}/logs.txt')
+              'See logs for details: ' + out_dir / 'logs.txt')
 
         return
 
@@ -80,14 +79,17 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
 
             logging.info(f'Processing peer {peer_id}')
 
-            session = db.connect(f"{out_dir}/.sqlite/{peer_id}.sqlite")
+            db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
 
             if not append:
                 # Если переписку нужно загрузить заново, полностью очищаем БД
-                db.Base.metadata.drop_all(session.bind)
-                db.Base.metadata.create_all(session.bind)
+                db_path.unlink(missing_ok=True)
 
+            session = db.connect(db_path)
+
+            if not append:
                 # Сохраняем информацию о переписке и владельце страницы
+                db.Base.metadata.create_all(session.bind)
                 session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
                 session.flush()
 
@@ -176,7 +178,7 @@ def parse(out_dir, include, exclude, fmt):
         fmt (str): Формат, в котором следует сохранять переписки
     """
     # Получаем идентификаторы всех скачанных переписок
-    peer_ids = {int(file.rstrip('.sqlite')) for file in listdir(f'{out_dir}/.sqlite/')}
+    peer_ids = {int(file.rstrip('.sqlite')) for file in out_dir.glob('/.sqlite/*.sqlite')}
 
     # Выбираем нужные переписки
     if include:
@@ -192,7 +194,7 @@ def parse(out_dir, include, exclude, fmt):
     for peer_id in peer_ids:
         logging.info(f'Processing peer {peer_id}')
 
-        session = db.connect(f'{out_dir}/.sqlite/{peer_id}.sqlite')
+        session = db.connect(out_dir / f'.sqlite/{peer_id}.sqlite')
 
         print(f'{round(processed / len(peer_ids) * 100)}%', end='\r')
 
@@ -216,7 +218,7 @@ def atch(out_dir, include, exclude, nthreads):
         nthreads (int): Количество потоков, загружающих вложения
     """
     # Получаем идентификаторы всех скачанных переписок
-    peer_ids = {int(file.rstrip('.json')) for file in listdir(f'{out_dir}/.json/')}
+    peer_ids = {int(file.rstrip('.sqlite')) for file in out_dir.glob('.sqlite/*.sqlite')}
 
     # Выбираем нужные переписки
     if include:
@@ -232,7 +234,7 @@ def atch(out_dir, include, exclude, nthreads):
     for peer_id in peer_ids:
         logging.info(f'Processing peer {peer_id}')
 
-        session = db.connect(f'{out_dir}/.sqlite/{peer_id}.sqlite')
+        session = db.connect(out_dir / f'.sqlite/{peer_id}.sqlite')
 
         print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
 
