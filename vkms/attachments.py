@@ -104,7 +104,7 @@ class FileAttachment(Attachment):
     filename = None
 
     def get_path(self, out_dir):
-        return f'{os.path.abspath(out_dir)}/attachments/{self.pf_dir}/{self.filename}'
+        return (out_dir / 'attachments' / self.pf_dir / self.filename).resolve()
 
     def download(self, out_dir):
         """

@@ -176,7 +176,7 @@ def parse(out_dir, include, exclude, fmt):
         fmt (str): Формат, в котором следует сохранять переписки
     """
     # Получаем идентификаторы всех скачанных переписок
-    peer_ids = {int(file.rstrip('.sqlite')) for file in out_dir.glob('/.sqlite/*.sqlite')}
+    peer_ids = {int(file.name.rstrip('.sqlite')) for file in out_dir.glob('.sqlite/*.sqlite')}
 
     # Выбираем нужные переписки
     if include:
@@ -216,7 +216,7 @@ def atch(out_dir, include, exclude, nthreads):
         nthreads (int): Количество потоков, загружающих вложения
     """
     # Получаем идентификаторы всех скачанных переписок
-    peer_ids = {int(file.rstrip('.sqlite')) for file in out_dir.glob('.sqlite/*.sqlite')}
+    peer_ids = {int(file.name.rstrip('.sqlite')) for file in out_dir.glob('.sqlite/*.sqlite')}
 
     # Выбираем нужные переписки
     if include:

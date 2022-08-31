@@ -1,3 +1,4 @@
+import os
 from io import StringIO
 from pathlib import Path
 
@@ -193,7 +194,7 @@ def save_html(out_dir, peer):
     env = Environment(loader=FileSystemLoader(base_dir / 'templates'))
 
     def relpath(path):
-        return Path(path).relative_to(start=out_dir / 'dialogs/html')
+        return os.path.relpath(path, start=out_dir / 'dialogs/html')
 
     env.filters['relpath'] = relpath
 
