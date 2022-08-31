@@ -43,7 +43,7 @@ class User(Base):
 
 
 def connect(path):
-    engine = create_engine(f'sqlite:///{path}', future=True, echo=True)
+    engine = create_engine(f'sqlite:///{path}', future=True)
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
 

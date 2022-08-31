@@ -3,16 +3,18 @@ import logging
 from . import __version__, actions
 from .argparser import parse_args
 
+log = logging.getLogger(__name__)
 
-def _setup_logging(out_dir):
+
+def _setup_logging(out_dir, verbose):
     logging.getLogger('vk').setLevel(logging.WARNING)
+    logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+
     logging.basicConfig(
         filename=out_dir / 'logs.txt',
         filemode='a',
-        format='[%(levelname)s] (%(asctime)s.%(msecs)03d - '
-               '%(module)s - %(threadName)s): %(message)s',
-        level=logging.INFO,
-        datefmt='%m/%d/%Y %H:%M:%S'
+        format='%(asctime)s | %(levelname)s | %(name)s | %(threadName)s |: %(message)s',
+        level=(3 - min(verbose, 2)) * logging.DEBUG,
     )
 
 
@@ -25,9 +27,9 @@ def main():
     (args.out_dir / '.json').mkdir(parents=True, exist_ok=True)
     (args.out_dir / '.sqlite').mkdir(parents=True, exist_ok=True)
 
-    _setup_logging(args.out_dir)
-    logging.info(f'VKMS {__version__} started')
-    logging.info(f'Arguments: {args}')
+    _setup_logging(args.out_dir, args.verbose)
+    log.info(f'VKMS {__version__} started')
+    log.debug(f'Arguments: {args}')
 
     if args.action == 'dump':
         actions.dump(
@@ -47,4 +49,4 @@ def main():
     elif args.action == 'atch':
         actions.atch(args.out_dir, args.include, args.exclude, args.threads)
 
-    logging.info('VKMS completed\n')
+    log.info('VKMS completed\n')

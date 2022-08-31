@@ -39,6 +39,13 @@ def parse_args():
         help='Comma-separated list of peer IDs that DON\'T need to be processed. '
              'Ignored if the --include parameter is specified'
     )
+    parser.add_argument(
+        '-v',
+        dest='verbose',
+        action='count',
+        default=0,
+        help='Increase logs verbosity level (use -vv for greater effect)'
+    )
 
     subparsers = parser.add_subparsers(
         dest='action',

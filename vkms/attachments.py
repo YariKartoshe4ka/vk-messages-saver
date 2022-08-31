@@ -8,6 +8,8 @@ from pathvalidate import sanitize_filename
 from requests import get
 from requests.exceptions import RequestException
 
+log = logging.getLogger(__name__)
+
 
 def download(out_dir, peer, nthreads):
     """
@@ -53,7 +55,7 @@ def download(out_dir, peer, nthreads):
             except IndexError:
                 return
 
-            logging.info(f'Downloading attachment {atch.tp}, {atch.filename}')
+            log.debug(f'Downloading attachment {atch.tp}, {atch.filename}')
 
             # Загружаем вложение
             atch.download(out_dir)
@@ -115,7 +117,7 @@ class FileAttachment(Attachment):
                 результат работы программы
         """
         if not self.url:
-            logging.warning('Downloading attachment skipped: URL not specified')
+            log.warning('Downloading attachment skipped: URL not specified')
             return
 
         # Создаем папку для хранения вложений этого типа
@@ -138,7 +140,7 @@ class FileAttachment(Attachment):
 
                     # Если ошибка на нашей стороне - пропускаем это вложение
                     elif r.status_code >= 400:
-                        logging.error(
+                        log.error(
                             'Downloading attachment failed: HTTP code %s. Url: %s',
                             r.status_code, self.url
                         )
@@ -155,7 +157,7 @@ class FileAttachment(Attachment):
             except RequestException:
                 attempts += 1
 
-        logging.error(
+        log.error(
             'Downloading attachment failed: HTTP code > 500 or '
             'weak connection. Url: ' + self.url
         )

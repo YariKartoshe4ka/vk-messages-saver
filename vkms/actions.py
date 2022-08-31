@@ -10,6 +10,8 @@ from . import attachments
 from . import database as db
 from . import messages, peers, saver, users
 
+log = logging.getLogger(__name__)
+
 
 def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_json):
     """
@@ -65,7 +67,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
     peer_ids = list(peer_ids)
     peer_ids_len = len(peer_ids)
 
-    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
+    log.debug(f"Peers: {', '.join(map(str, peer_ids))}")
 
     def dump_thread():
         """Поток для загрузки переписки"""
@@ -77,7 +79,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
             except IndexError:
                 return
 
-            logging.info(f'Processing peer {peer_id}')
+            log.debug(f'Processing peer {peer_id}')
 
             db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
 
@@ -133,7 +135,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
                         session.bulk_save_objects(db.User(user_json) for user_json in chunk)
 
             except VkAPIError as e:
-                logging.error(f'Downloading peer {peer_id} failed: {e}')
+                log.error(f'Downloading peer {peer_id} failed: {e}')
                 session.rollback()
                 return
 
@@ -186,11 +188,11 @@ def parse(out_dir, include, exclude, fmt):
 
     processed = 0
 
-    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
+    log.debug(f"Peers: {', '.join(map(str, peer_ids))}")
 
     # Обрабатываем каждую переписку отдельно
     for peer_id in peer_ids:
-        logging.info(f'Processing peer {peer_id}')
+        log.debug(f'Processing peer {peer_id}')
 
         session = db.connect(out_dir / f'.sqlite/{peer_id}.sqlite')
 
@@ -224,13 +226,13 @@ def atch(out_dir, include, exclude, nthreads):
     elif exclude:
         peer_ids -= exclude
 
-    logging.info(f"Peers: {', '.join(map(str, peer_ids))}")
+    log.debug(f"Peers: {', '.join(map(str, peer_ids))}")
 
     peer_ids_cnt = 0
 
     # Обрабатываем каждую переписку отдельно
     for peer_id in peer_ids:
-        logging.info(f'Processing peer {peer_id}')
+        log.debug(f'Processing peer {peer_id}')
 
         session = db.connect(out_dir / f'.sqlite/{peer_id}.sqlite')
 
