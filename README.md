@@ -46,6 +46,18 @@ pip install vkms
 - Сохранять переписки в удобном для чтения формате (`vkms parse`)
     - TXT, за основу была взята структура формата [hikiko4ern'а](https://github.com/hikiko4ern/vk_dump)
     - HTML, кастомная верстка, максимально приближенная к официальному приложению VK Android
+
+<table>
+    <tr align="center">
+        <th>HTML</th>
+        <th>TXT</th>
+    </tr>
+    <tr>
+        <td width="50%"><img src="docs/html_saver_example.png" alt="Пример переписки в HTML формате"></td>
+        <td width="50%"><img src="docs/txt_saver_example.png" alt="Пример переписки в TXT формате"></td>
+    </tr>
+</table>
+
 - Загружать вложения, доступна многопоточная загрузка (`vkms atch`)
     - Фото
     - Документы

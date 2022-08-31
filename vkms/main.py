@@ -7,8 +7,8 @@ log = logging.getLogger(__name__)
 
 
 def _setup_logging(out_dir, verbose):
-    logging.getLogger('vk').setLevel(logging.WARNING)
-    logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+    for module in ('vk', 'sqlalchemy', 'urllib3'):
+        logging.getLogger(module).setLevel(logging.WARNING)
 
     logging.basicConfig(
         filename=out_dir / 'logs.txt',
