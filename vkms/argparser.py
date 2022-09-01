@@ -53,7 +53,7 @@ def parse_args():
         dest='verbose',
         action='count',
         default=0,
-        help='Increase logs verbosity level (use -vv for greater effect)'
+        help='Increase logs verbosity level (use -vvv for greater effect)'
     )
 
     subparsers = parser.add_subparsers(

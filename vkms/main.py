@@ -7,14 +7,18 @@ log = logging.getLogger(__name__)
 
 
 def _setup_logging(out_dir, verbose):
+    log_level = -min(verbose, 3) % 4 * logging.DEBUG
+
     for module in ('vk', 'sqlalchemy', 'urllib3'):
-        logging.getLogger(module).setLevel(logging.WARNING)
+        logging.getLogger(module).setLevel(
+            logging.WARNING if verbose < 3 else log_level
+        )
 
     logging.basicConfig(
         filename=out_dir / 'logs.txt',
         filemode='a',
         format='%(asctime)s | %(levelname)s | %(name)s | %(threadName)s |: %(message)s',
-        level=(3 - min(verbose, 2)) * logging.DEBUG,
+        level=log_level
     )
 
 
