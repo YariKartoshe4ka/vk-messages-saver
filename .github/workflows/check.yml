@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+  schedule:
+    - cron: "0 12 * * 0"
+
 name: Check
 
 jobs:
@@ -19,3 +22,31 @@ jobs:
       uses: actions/setup-python@v2
     - name: Run pre-commit
       uses: pre-commit/action@v2.0.3
+
+  test-run:
+    name: Run VKMS
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install VKMS
+      run: pip install .
+    - name: Run VKMS
+      run: |
+        vkms -i ${{ secrets.VKMS_INCLUDE }} dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} --export-json
+        vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f txt
+        vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f html
+        vkms -i ${{ secrets.VKMS_INCLUDE }} atch
+    - name: Zip artifacts with password
+      run: zip -p '${{ secrets.ZIP_PASSWORD }}' result.zip vkms-result/
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: VKMS result
+        path: result.zip
+    - name: Clear artifacts
+      run: rm -rf vkms-result/
