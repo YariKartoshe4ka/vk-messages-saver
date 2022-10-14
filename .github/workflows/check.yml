@@ -42,12 +42,14 @@ jobs:
         vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f html
         vkms -i ${{ secrets.VKMS_INCLUDE }} atch
     - name: Zip artifacts with password
-      run: zip -P '${{ secrets.ZIP_PASSWORD }}' -r result.zip vkms-result/ 1>/dev/null
+      run: |
+        zip -r result.zip vkms-result/ 1>/dev/null
+        zip -P '${{ secrets.ZIP_PASSWORD }}' enc_result.zip result.zip
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: VKMS result
-        path: result.zip
+        path: enc_result.zip
         if-no-files-found: error
     - name: Clear artifacts
-      run: rm -rf vkms-result/
+      run: rm -rf vkms-result/ result.zip enc_result.zip
