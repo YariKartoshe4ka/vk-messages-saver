@@ -1,4 +1,5 @@
 import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from re import sub
 
 from . import database as db
@@ -6,7 +7,7 @@ from .attachments import gen_attachment
 from .utils import months
 
 
-def download(api, peer_id, max_msgs, start_msg_id):
+def download(api, peer_id, nthreads, max_msgs, start_msg_id):
     """
     Загружает сообщения переписки. В начале идут старые сообщения, в конце - новые
 
@@ -23,42 +24,47 @@ def download(api, peer_id, max_msgs, start_msg_id):
     """
     # Получаем количество сообщений в переписке, чтобы сформировать необходимый offset
     res = api.messages.getHistory(count=1, peer_id=peer_id)
-
-    msgs = []
     processed = 0
 
     max_msgs = min(max_msgs, res['count'])
 
-    # Повторяем действия выше, пока все сообщения не будут загружены
-    while processed < max_msgs and res['items']:
-        if start_msg_id is None:
-            res = api.messages.getHistory(
-                offset=res['count'] - min(max_msgs, res['count']) + processed,
-                count=min(max_msgs - processed, 200),
-                peer_id=peer_id,
-                rev=1
-            )
+    with ThreadPoolExecutor(nthreads, 'Thread-') as executor:
+        tasks = []
 
-        else:
-            res = api.messages.getHistory(
-                offset=-(processed + min(max_msgs - processed, 200)),
-                count=min(max_msgs - processed, 200),
-                peer_id=peer_id,
-                start_message_id=start_msg_id
-            )
-            res['items'].reverse()
+        # Скачиваем, пока все сообщения не будут загружены
+        while processed < max_msgs:
+            if start_msg_id is None:
+                tasks.append(executor.submit(
+                    api.messages.getHistory,
+                    offset=res['count'] - min(max_msgs, res['count']) + processed,
+                    count=min(max_msgs - processed, 200),
+                    peer_id=peer_id,
+                    rev=1
+                ))
 
-        msgs += res['items']
+            else:
+                tasks.append(executor.submit(
+                    api.messages.getHistory,
+                    offset=-(processed + min(max_msgs - processed, 200)),
+                    count=min(max_msgs - processed, 200),
+                    peer_id=peer_id,
+                    start_message_id=start_msg_id
+                ))
 
-        processed += len(res['items'])
-        max_msgs = min(max_msgs, res['count'])
+            processed += 200
 
-        # Чтобы не нагружать память, возвращаем сообщения частями
-        if not processed % 5000:
-            yield msgs
-            msgs.clear()
+            # Чтобы не нагружать память, возвращаем сообщения частями
+            if not processed % 5000:
+                yield (
+                    msg for future in as_completed(tasks)
+                    for msg in future.result()['items'][::-1 + (not start_msg_id) * 2]
+                )
+                tasks.clear()
 
-    yield msgs
+        yield (
+            msg for future in as_completed(tasks)
+            for msg in future.result()['items'][::-1 + (not start_msg_id) * 2]
+        )
 
 
 # Шаблоны текстов сервисных действий в формате тип-текст

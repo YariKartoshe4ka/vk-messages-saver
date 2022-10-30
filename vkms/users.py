@@ -1,4 +1,5 @@
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
 from . import database as db
@@ -37,7 +38,7 @@ def collect(msg, user_ids, group_ids):
             queue.append(msg['reply_message'])
 
 
-def download(api, user_ids, group_ids):
+def download(api, nthreads, user_ids, group_ids):
     """
     Загружает имена участников переписки
 
@@ -49,21 +50,35 @@ def download(api, user_ids, group_ids):
     Yields:
         list: Чанк загруженных пользователей, размер не превышает 5000
     """
-    # Сначала загружаем пользователей
-    for chunk in chunks(user_ids, 5000):
-        yield list(chain.from_iterable(
-            api.users.get(user_ids=','.join(map(str, subchunk)))
-            for subchunk in chunks(chunk, 1000)
-        ))
+    with ThreadPoolExecutor(nthreads, 'Thread-') as executor:
+        tasks = []
 
-    # Затем загружаем сообщества
-    for chunk in chunks(group_ids, 5000):
-        yield list(chain.from_iterable(
-            api.groups.getById(group_ids=','.join(map(str, subchunk)))
-            for subchunk in chunks(chunk, 1000)
-        ))
+        # Сначала загружаем пользователей
+        for chunk in chunks(user_ids, 5000):
+            for subchunk in chunks(chunk, 1000):
+                tasks.append(executor.submit(
+                    api.users.get,
+                    user_ids=','.join(map(str, subchunk))
+                ))
 
-    return
+            yield list(chain.from_iterable(
+                future.result()
+                for future in as_completed(tasks)
+            ))
+            tasks.clear()
+
+        # Затем загружаем сообщества
+        for chunk in chunks(group_ids, 5000):
+            for subchunk in chunks(chunk, 1000):
+                tasks.append(executor.submit(
+                    api.groups.getById,
+                    group_ids=','.join(map(str, subchunk))
+                ))
+
+            yield list(chain.from_iterable(
+                future.result()
+                for future in as_completed(tasks)
+            ))
 
 
 def parse(session):

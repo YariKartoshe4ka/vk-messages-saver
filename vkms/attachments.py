@@ -1,8 +1,8 @@
 import logging
 import os
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, wait
 from operator import itemgetter
-from threading import Thread
 
 from pathvalidate import sanitize_filename
 from requests import get
@@ -24,54 +24,28 @@ def download(out_dir, peer, nthreads):
     # Создаем папку для хранения вложений
     (out_dir / 'attachments').mkdir(parents=True, exist_ok=True)
 
-    # Создаем список, состоящий только из скачиваемых вложений
-    atchs = []
-
     # Обход сообщений в ширину
     queue = deque(peer.msgs)
 
-    while queue:
-        msg = queue.popleft()
+    with ThreadPoolExecutor(nthreads, 'Thread-') as executor:
+        tasks = []
 
-        # Добавляем все скачиваемые вложения
-        for atch in msg.atchs:
-            if isinstance(atch, FileAttachment):
-                atchs.append(atch)
+        while queue:
+            msg = queue.popleft()
 
-        # Если у сообщения есть пересланные, то добавляем их в очередь
-        if msg.fwd_msgs:
-            queue.extend(msg.fwd_msgs)
+            # Добавляем все скачиваемые вложения
+            for atch in msg.atchs:
+                if isinstance(atch, FileAttachment):
+                    tasks.append(executor.submit(atch.download, out_dir))
 
-        if msg.reply_msg:
-            queue.append(msg.reply_msg)
+            # Если у сообщения есть пересланные, то добавляем их в очередь
+            if msg.fwd_msgs:
+                queue.extend(msg.fwd_msgs)
 
-    def atch_thread():
-        """Поток для загрузки вложений"""
+            if msg.reply_msg:
+                queue.append(msg.reply_msg)
 
-        # Работает, пока остались нескачанные вложения
-        while True:
-            try:
-                atch = atchs.pop()
-            except IndexError:
-                return
-
-            log.debug(f'Downloading attachment {atch.tp}, {atch.filename}')
-
-            # Загружаем вложение
-            atch.download(out_dir)
-
-    # Список всех потоков
-    tds = []
-
-    # Создаем N потоков
-    for _ in range(min(nthreads, len(atchs))):
-        td = Thread(target=atch_thread, daemon=True)
-        td.start()
-        tds.append(td)
-
-    # Ждем, пока все вложения будут скачаны
-    for td in tds:
-        td.join()
+        wait(tasks)
 
 
 class Attachment:
@@ -116,6 +90,8 @@ class FileAttachment(Attachment):
             out_dir (str): Абсолютный путь к каталогу, в котором находится
                 результат работы программы
         """
+        log.debug(f'Downloading attachment {self.tp}, {self.filename}')
+
         if not self.url:
             log.warning('Downloading attachment skipped: URL not specified')
             return

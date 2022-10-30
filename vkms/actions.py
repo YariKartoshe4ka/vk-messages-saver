@@ -1,5 +1,4 @@
 import logging
-from threading import Thread
 from time import sleep
 
 import vk
@@ -67,101 +66,80 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
     peer_ids = list(peer_ids)
     peer_ids_len = len(peer_ids)
 
+    processed = 0
+
     log.debug(f"Peers: {', '.join(map(str, peer_ids))}")
 
-    def dump_thread():
-        """Поток для загрузки переписки"""
+    # Обрабатываем каждую переписку отдельно
+    for peer_id in peer_ids:
+        log.debug(f'Processing peer {peer_id}')
 
-        # Работает, пока остались необработанные переписки
-        while True:
-            try:
-                peer_id = peer_ids.pop()
-            except IndexError:
-                return
+        db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
 
-            log.debug(f'Processing peer {peer_id}')
+        if not append:
+            # Если переписку нужно загрузить заново, полностью очищаем БД
+            db_path.unlink(missing_ok=True)
 
-            db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
+        session = db.connect(db_path)
 
-            if not append:
-                # Если переписку нужно загрузить заново, полностью очищаем БД
-                db_path.unlink(missing_ok=True)
+        if not append:
+            # Сохраняем информацию о переписке и владельце страницы
+            db.Base.metadata.create_all(session.bind)
+            session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
+            session.flush()
 
-            session = db.connect(db_path)
+        try:
+            # Сохраняем все сообщения и информацию об участниках переписки
+            user_ids = set()
+            group_ids = set()
 
-            if not append:
-                # Сохраняем информацию о переписке и владельце страницы
-                db.Base.metadata.create_all(session.bind)
-                session.add(db.Peer(id=peer_id, account=account, info=peer_by_id[peer_id]))
-                session.flush()
+            pres_user_ids = {
+                id for id, in
+                session.query(db.User.id).filter(db.User.id > 0)
+            }
+            pres_group_ids = {
+                abs(id) for id, in
+                session.query(db.User.id).filter(db.User.id < 0)
+            }
 
-            try:
-                # Сохраняем все сообщения и информацию об участниках переписки
-                user_ids = set()
-                group_ids = set()
+            # Идентификатор последнего сообщения переписки
+            start_msg_id, _ = session.query(
+                db.Message.id,
+                func.max(db.Message.date)
+            ).one_or_none()
 
-                pres_user_ids = {
-                    id for id, in
-                    session.query(db.User.id).filter(db.User.id > 0)
-                }
-                pres_group_ids = {
-                    abs(id) for id, in
-                    session.query(db.User.id).filter(db.User.id < 0)
-                }
+            for chunk in messages.download(api, peer_id, nthreads, max_msgs, start_msg_id):
+                msgs = []
 
-                # Идентификатор последнего сообщения переписки
-                start_msg_id, _ = session.query(
-                    db.Message.id,
-                    func.max(db.Message.date)
-                ).one_or_none()
+                for msg_json in chunk:
+                    msg = db.Message(json=msg_json)
+                    msgs.append(msg)
 
-                for chunk in messages.download(api, peer_id, max_msgs, start_msg_id):
-                    msgs = []
+                    users.collect(msg_json, user_ids, group_ids)
 
-                    for msg_json in chunk:
-                        msg = db.Message(json=msg_json)
-                        msgs.append(msg)
+                session.bulk_save_objects(msgs)
 
-                        users.collect(msg_json, user_ids, group_ids)
+            if user_ids or group_ids:
+                # Исключаем пользователей, которые уже есть в БД
+                user_ids -= pres_user_ids
+                group_ids -= pres_group_ids
 
-                    session.bulk_save_objects(msgs)
+                for chunk in users.download(api, nthreads, user_ids, group_ids):
+                    session.bulk_save_objects(db.User(user_json) for user_json in chunk)
 
-                if user_ids or group_ids:
-                    # Исключаем пользователей, которые уже есть в БД
-                    user_ids -= pres_user_ids
-                    group_ids -= pres_group_ids
+        except VkAPIError as e:
+            log.error(f'Downloading peer {peer_id} failed: {e}')
+            session.rollback()
+            return
 
-                    for chunk in users.download(api, user_ids, group_ids):
-                        session.bulk_save_objects(db.User(user_json) for user_json in chunk)
+        # Все хорошо, сохраняем изменения
+        session.commit()
 
-            except VkAPIError as e:
-                log.error(f'Downloading peer {peer_id} failed: {e}')
-                session.rollback()
-                return
+        # Если нужно, дополнительно экспортируем информацию в JSON
+        if export_json:
+            peers.export_json(out_dir, session)
 
-            # Все хорошо, сохраняем изменения
-            session.commit()
-
-            # Если нужно, дополнительно экспортируем информацию в JSON
-            if export_json:
-                peers.export_json(out_dir, session)
-
-    # Список всех потоков
-    tds = []
-
-    # Создаем N потоков
-    for _ in range(min(nthreads, peer_ids_len)):
-        td = Thread(target=dump_thread, daemon=True)
-        td.start()
-        tds.append(td)
-
-    # Ждем, пока все переписки будут скачаны
-    while n := sum(td.is_alive() for td in tds):
-        print(f'{round((peer_ids_len - len(peer_ids) - n) / peer_ids_len * 100)}%', end='\r')
-
-    # Сливаем потоки
-    for td in tds:
-        td.join()
+        print(f'{round(processed / peer_ids_len * 100)}%', end='\r')
 
     print('100%')
 

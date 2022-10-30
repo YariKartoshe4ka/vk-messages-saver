@@ -69,7 +69,7 @@ jobs:
       run: pip install .
     - name: Run VKMS
       run: |
-        TIME='%e' /bin/time vkms -i c21 -o vkms-result-stats dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} 2> time.txt
+        TIME='%e' /bin/time vkms -i c21 -o vkms-result-stats dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} -t 4 2> time.txt
         sqlite3 vkms-result-stats/.sqlite/2000000021.sqlite -batch 'select count() from messages;' > count.txt
         printf 'VKMS_SPEED=%.f\n' $(echo $(<count.txt)'/'$(<time.txt) | bc) >> $GITHUB_ENV
     - name: Update speed badge
