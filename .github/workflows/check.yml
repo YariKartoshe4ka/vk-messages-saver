@@ -79,7 +79,8 @@ jobs:
         gistID: bf106ade592cbea6189b89f71c7545e9
         filename: vkms-speed.json
         label: speed
-        message: \~${{ env.VKMS_SPEED }} m/s
-        color: green
+        message: ~${{ env.VKMS_SPEED }} m/s
+        color: success
+        style: flat-square
     - name: Clear artifacts
       run: rm -rf vkms-result-stats
