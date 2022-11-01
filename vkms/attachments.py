@@ -11,7 +11,7 @@ from requests.exceptions import RequestException
 log = logging.getLogger(__name__)
 
 
-def download(out_dir, peer, nthreads):
+def download(out_dir, peer, nthreads, types):
     """
     Скачивает указанные переписки в формате JSON (результаты обращений к VK API)
 
@@ -35,7 +35,7 @@ def download(out_dir, peer, nthreads):
 
             # Добавляем все скачиваемые вложения
             for atch in msg.atchs:
-                if isinstance(atch, FileAttachment):
+                if class_to_name.get(atch.__class__) in types:
                     tasks.append(executor.submit(atch.download, out_dir))
 
             # Если у сообщения есть пересланные, то добавляем их в очередь
@@ -292,6 +292,15 @@ class Poll(Attachment):
 _attachments = {
     atch.tp: atch
     for atch in Attachment.__subclasses__() + FileAttachment.__subclasses__()
+}
+
+class_to_name = {
+    Photo: 'photos',
+    Document: 'docs',
+    Sticker: 'stickers',
+    Gift: 'gifts',
+    AudioMessage: 'audios',
+    Graffiti: 'graffiti'
 }
 
 

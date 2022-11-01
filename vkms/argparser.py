@@ -131,6 +131,15 @@ def parse_args():
         default=8,
         help='Number of threads to download attachments, defaults to 8'
     )
+    parser_atch.add_argument(
+        '--tp',
+        dest='types',
+        type=lambda x: set(x.split(',')),
+        default={'photos', 'docs', 'stickers', 'gifts', 'audios', 'graffiti'},
+        help='Comma-separated list of attachment types that need to be be saved. '
+             'Available options: photos, docs, stickers, gifts, audios, graffiti. '
+             'Defaults to all types of attachments'
+    )
 
     args = parser.parse_args()
 

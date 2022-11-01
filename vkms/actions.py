@@ -74,6 +74,8 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
     for peer_id in peer_ids:
         log.debug(f'Processing peer {peer_id}')
 
+        print(f'{round(processed / peer_ids_len * 100)}%', end='\r')
+
         db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
 
         if not append:
@@ -139,7 +141,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
         if export_json:
             peers.export_json(out_dir, session)
 
-        print(f'{round(processed / peer_ids_len * 100)}%', end='\r')
+        processed += 1
 
     print('100%')
 
@@ -184,7 +186,7 @@ def parse(out_dir, include, exclude, fmt):
     print('100%')
 
 
-def atch(out_dir, include, exclude, nthreads):
+def atch(out_dir, include, exclude, nthreads, types):
     """
     Скачивает вложения указанных переписок
 
@@ -217,7 +219,7 @@ def atch(out_dir, include, exclude, nthreads):
         print(f'{round(peer_ids_cnt / len(peer_ids) * 100)}%', end='\r')
 
         peer = peers.Peer(session)
-        attachments.download(out_dir, peer, nthreads)
+        attachments.download(out_dir, peer, nthreads, types)
 
         peer_ids_cnt += 1
 

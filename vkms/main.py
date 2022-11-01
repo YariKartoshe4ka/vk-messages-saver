@@ -51,6 +51,6 @@ def main():
         actions.parse(args.out_dir, args.include, args.exclude, args.fmt)
 
     elif args.action == 'atch':
-        actions.atch(args.out_dir, args.include, args.exclude, args.threads)
+        actions.atch(args.out_dir, args.include, args.exclude, args.threads, args.types)
 
     log.info('VKMS completed\n')
