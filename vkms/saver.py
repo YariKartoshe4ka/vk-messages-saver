@@ -48,7 +48,7 @@ def _convert_txt_msgs(msgs, account_id, file=None):
 
         # Если предыдущее и текущее сообщения были отправлены в разные дни,
         # пишем дату текущего сообщения
-        elif msg.date.day - prev_msg.date.day >= 1:
+        elif msg.date.date() != prev_msg.date.date():
             file.write(f'\n        [{msg.full_date()}]\n')
             prev_msg = None
 

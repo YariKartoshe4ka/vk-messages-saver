@@ -420,7 +420,7 @@
     {% for msg in peer.msgs %}
       {# Пишем дату текущего сообщения, если предыдущего сообщения не было или #}
       {# если предыдущее и текущее сообщения были отправлены в разные дни #}
-      {% if ns.prev_msg is none or (msg.date.day - ns.prev_msg.date.day >= 1) %}
+      {% if ns.prev_msg is none or msg.date.date() != ns.prev_msg.date.date() %}
         <div class="date color-light-gray">
           {{ msg.full_date() }}
         </div>

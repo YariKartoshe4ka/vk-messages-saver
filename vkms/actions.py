@@ -64,7 +64,6 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
         peer_ids -= exclude
 
     peer_ids = list(peer_ids)
-    peer_ids_len = len(peer_ids)
 
     processed = 0
 
@@ -74,7 +73,7 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
     for peer_id in peer_ids:
         log.debug(f'Processing peer {peer_id}')
 
-        print(f'{round(processed / peer_ids_len * 100)}%', end='\r')
+        print(f'{round(processed / len(peer_ids) * 100)}%', end='\r')
 
         db_path = out_dir / f'.sqlite/{peer_id}.sqlite'
 
