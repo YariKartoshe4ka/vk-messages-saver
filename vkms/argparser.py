@@ -132,7 +132,7 @@ def parse_args():
         help='Number of threads to download attachments, defaults to 8'
     )
     parser_atch.add_argument(
-        '--tp',
+        '--ts',
         dest='types',
         type=lambda x: set(x.split(',')),
         default={'photos', 'docs', 'stickers', 'gifts', 'audios', 'graffiti'},
