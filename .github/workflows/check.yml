@@ -1,9 +1,10 @@
 on:
   pull_request:
-    branches:
+    branch:
 
   push:
-    branches:
+    branches-ignore:
+      - "dependabot/**"
 
   schedule:
     - cron: "0 12 * * 0"
