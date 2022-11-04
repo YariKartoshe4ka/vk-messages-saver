@@ -1,10 +1,9 @@
 on:
   pull_request:
     branches:
-      - master
+
   push:
     branches:
-      - master
 
   schedule:
     - cron: "0 12 * * 0"
@@ -16,75 +15,75 @@ jobs:
     name: Run pre-commit
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    - name: Setup Python
-      uses: actions/setup-python@v2
-    - name: Run pre-commit
-      uses: pre-commit/action@v2.0.3
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+      - name: Run pre-commit
+        uses: pre-commit/action@v2.0.3
 
   test-run:
     name: Test VKMS
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.10"
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 1
-    - name: Install VKMS
-      run: pip install .
-    - name: Run VKMS
-      run: |
-        vkms -i ${{ secrets.VKMS_INCLUDE }} dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} --export-json
-        vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f txt
-        vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f html
-        vkms -i ${{ secrets.VKMS_INCLUDE }} atch
-    - name: Zip artifacts with password
-      run: |
-        zip -r result.zip vkms-result/ 1>/dev/null
-        zip -P '${{ secrets.ZIP_PASSWORD }}' enc_result.zip result.zip
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: VKMS result
-        path: enc_result.zip
-        if-no-files-found: error
-    - name: Clear artifacts
-      run: rm -rf vkms-result/ result.zip enc_result.zip
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install VKMS
+        run: pip install .
+      - name: Run VKMS
+        run: |
+          vkms -i ${{ secrets.VKMS_INCLUDE }} dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} --export-json
+          vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f txt
+          vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f html
+          vkms -i ${{ secrets.VKMS_INCLUDE }} atch
+      - name: Zip artifacts with password
+        run: |
+          zip -r result.zip vkms-result/ 1>/dev/null
+          zip -P '${{ secrets.ZIP_PASSWORD }}' enc_result.zip result.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: VKMS result
+          path: enc_result.zip
+          if-no-files-found: error
+      - name: Clear artifacts
+        run: rm -rf vkms-result/ result.zip enc_result.zip
 
   stats-run:
     name: Collect VKMS run statistics
     needs: [pre-commit, test-run]
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.10"
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 1
-    - name: Install VKMS
-      run: pip install .
-    - name: Run VKMS
-      run: |
-        TIME='%e' /bin/time vkms -i c21 -o vkms-result-stats dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} -t 4 2> time.txt
-        sqlite3 vkms-result-stats/.sqlite/2000000021.sqlite -batch 'select count() from messages;' > count.txt
-        printf 'VKMS_SPEED=%.f\n' $(echo $(<count.txt)'/'$(<time.txt) | bc) >> $GITHUB_ENV
-    - name: Update speed badge
-      uses: schneegans/dynamic-badges-action@v1.6.0
-      with:
-        auth: ${{ secrets.GH_API_TOKEN }}
-        gistID: bf106ade592cbea6189b89f71c7545e9
-        filename: vkms-speed.json
-        label: speed
-        message: ~${{ env.VKMS_SPEED }} m/s
-        color: success
-        style: flat-square
-    - name: Clear artifacts
-      run: rm -rf vkms-result-stats
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install VKMS
+        run: pip install .
+      - name: Run VKMS
+        run: |
+          TIME='%e' /bin/time vkms -i c21 -o vkms-result-stats dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} -t 4 2> time.txt
+          sqlite3 vkms-result-stats/.sqlite/2000000021.sqlite -batch 'select count() from messages;' > count.txt
+          printf 'VKMS_SPEED=%.f\n' $(echo $(<count.txt)'/'$(<time.txt) | bc) >> $GITHUB_ENV
+      - name: Update speed badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.GH_API_TOKEN }}
+          gistID: bf106ade592cbea6189b89f71c7545e9
+          filename: vkms-speed.json
+          label: speed
+          message: ~${{ env.VKMS_SPEED }} m/s
+          color: success
+          style: flat-square
+      - name: Clear artifacts
+        run: rm -rf vkms-result-stats
