@@ -13,6 +13,14 @@ class CustomHelpFormatter(RawDescriptionHelpFormatter):
         return '/'.join(action.option_strings) + ' ' + args_string
 
 
+description = 'Utility for saving VKontakte conversations'
+epilog = '''examples:
+  %(prog)s -vv -i c45,558891166 dump --export-json
+  %(prog)s -e 100,-22822305 parse -f html
+  %(prog)s atch --ts photos,audios
+'''
+
+
 def parse_args():
     """
     Создает объект парсера и парсит аргументы
@@ -20,7 +28,11 @@ def parse_args():
     Returns:
         argparse.Namespace: Набор аргументов парсера
     """
-    parser = ArgumentParser(formatter_class=CustomHelpFormatter)
+    parser = ArgumentParser(
+        formatter_class=CustomHelpFormatter,
+        description=description,
+        epilog=epilog
+    )
 
     parser.add_argument(
         '-o',
@@ -66,7 +78,9 @@ def parse_args():
         'dump',
         help='Save only the necessary information (VK API method outputs) '
              'in a machine-friendly format (SQLite + JSON) for further processing',
-        formatter_class=CustomHelpFormatter
+        formatter_class=CustomHelpFormatter,
+        description=description,
+        epilog=epilog
     )
 
     parser_dump.add_argument(
@@ -105,7 +119,9 @@ def parse_args():
     parser_parse = subparsers.add_parser(
         'parse',
         help='Convert machine-friendly JSON format to human-readable',
-        formatter_class=CustomHelpFormatter
+        formatter_class=CustomHelpFormatter,
+        description=description,
+        epilog=epilog
     )
 
     parser_parse.add_argument(
@@ -121,7 +137,9 @@ def parse_args():
     parser_atch = subparsers.add_parser(
         'atch',
         help='Download messages attachments (photos, audio, etc.)',
-        formatter_class=CustomHelpFormatter
+        formatter_class=CustomHelpFormatter,
+        description=description,
+        epilog=epilog
     )
 
     parser_atch.add_argument(
