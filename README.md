@@ -67,4 +67,4 @@ pip install vkms
     - Голосовые сообщения
     - Граффити
 
-[Подробное описание](docs/DOCS.md)
+[Подробное описание](https://github.com/YariKartoshe4ka/vk-messages-saver/blob/master/docs/DOCS.md)
