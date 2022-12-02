@@ -48,12 +48,14 @@ jobs:
         run: |
           zip -r result.zip vkms-result/ 1>/dev/null
           zip -P '${{ secrets.ZIP_PASSWORD }}' enc_result.zip result.zip
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: VKMS result
-          path: enc_result.zip
-          if-no-files-found: error
+      - name: Send artifacts to Telegram
+        run: |
+          curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument" \
+            --form-string "chat_id=${{ secrets.TELEGRAM_TO }}" \
+            --form-string "disable_web_page_preview=true" \
+            --form-string "parse_mode=html" \
+            --form-string "caption=<i> VKMS Result </i> | Build finished on <b> $(TZ='Europe/Moscow' date) </b>" \
+            -F document=@"enc_result.zip"
       - name: Clear artifacts
         run: rm -rf vkms-result/ result.zip enc_result.zip
 
