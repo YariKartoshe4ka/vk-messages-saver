@@ -1,10 +1,7 @@
 on:
   pull_request:
-    branch:
 
   push:
-    branches-ignore:
-      - "dependabot/**"
 
   schedule:
     - cron: "0 12 * * 0"
@@ -12,6 +9,9 @@ on:
 name: Check
 
 jobs:
+  if-not-dependabot:
+    if: github.actor != "dependabot[bot]"
+
   pre-commit:
     name: Run pre-commit
     runs-on: ubuntu-latest
@@ -25,6 +25,7 @@ jobs:
 
   test-run:
     name: Test VKMS
+    needs: [if-not-dependabot]
     runs-on: ubuntu-latest
     steps:
       - name: Setup Python
@@ -58,7 +59,7 @@ jobs:
 
   stats-run:
     name: Collect VKMS run statistics
-    needs: [pre-commit, test-run]
+    needs: [pre-commit, test-run, if-not-dependabot]
     runs-on: ubuntu-latest
     steps:
       - name: Setup Python
