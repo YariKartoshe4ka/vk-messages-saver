@@ -15,7 +15,7 @@ dependencies = [
     "Jinja2<4,>=3.1",
     "minify-html<1,>=0.8",
     "vk<4,>=3.0",
-    "SQLAlchemy<2,>=1.4"
+    "SQLAlchemy>=1.4,<3"
 ]
 urls.Homepage = "https://github.com/YariKartoshe4ka/vk-messages-saver"
 readme = "README.md"
