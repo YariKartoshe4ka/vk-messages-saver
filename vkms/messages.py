@@ -124,7 +124,7 @@ class Message:
 
         # Получение имени отправителя по его ID
         self.from_id = json['from_id']
-        self.username = usernames.get(self.from_id) or f'Unknown username ({self.from_id})'  # Todo
+        self.username = usernames[self.from_id]
 
         # Получение времени отправления сообщения из формата Unixtime
         self.date = datetime.datetime.fromtimestamp(json['date'])
