@@ -37,7 +37,7 @@ def export_json(out_dir, session):
     """
     peer = session.query(db.Peer).one()
 
-    with open(out_dir / f'.json/{peer.id}.json', 'w') as file:
+    with open(out_dir / f'.json/{peer.id}.json', 'w', encoding='utf-8') as file:
         # Экспортируем информацию о переписке и владельце
         print(f"{'-' * 6} PEER {'-' * 6}", file=file)
         print(dumps(peer.account), file=file)

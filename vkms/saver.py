@@ -34,7 +34,7 @@ def save_txt(out_dir, peer):
     )
 
     # Сохраняем конвертированный текст
-    with open(path, 'w') as file:
+    with open(path, 'w', encoding='utf-8') as file:
         _convert_txt_msgs(peer.msgs, peer.account['id'], file)
 
 
@@ -201,7 +201,7 @@ def save_html(out_dir, peer):
     template = env.get_template('peer.html')
 
     # Сохраняем конвертированный текст (предварительно сжав HTML)
-    with open(path, 'w') as file:
+    with open(path, 'w', encoding='utf-8') as file:
         file.write(minify(
             template.render(out_dir=out_dir, peer=peer),
             minify_js=True,
