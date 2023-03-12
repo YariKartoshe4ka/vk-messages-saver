@@ -1,0 +1,41 @@
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 20 */5 * *"
+
+name: Stats
+
+jobs:
+  stats-run:
+    name: Collect VKMS run statistics
+    needs: [pre-commit, test-run]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install VKMS
+        run: pip install .
+      - name: Run VKMS
+        run: |
+          TIME='%e' /bin/time vkms -i c21 -o vkms-result-stats dump --token ${{ secrets.VKMS_ACCESS_TOKEN }} -t 4 2> time.txt
+          sqlite3 vkms-result-stats/.sqlite/2000000021.sqlite -batch 'select count() from messages;' > count.txt
+          printf 'VKMS_SPEED=%.f\n' $(echo $(<count.txt)'/'$(<time.txt) | bc) >> $GITHUB_ENV
+      - name: Update speed badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.GH_API_TOKEN }}
+          gistID: bf106ade592cbea6189b89f71c7545e9
+          filename: vkms-speed.json
+          label: speed
+          message: ~${{ env.VKMS_SPEED }} m/s
+          color: success
+          style: flat-square
+      - name: Clear artifacts
+        run: rm -rf vkms-result-stats

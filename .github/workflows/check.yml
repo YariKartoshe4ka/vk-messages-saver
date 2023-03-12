@@ -4,7 +4,7 @@ on:
   push:
 
   schedule:
-    - cron: "0 12 * * 0"
+    - cron: "0 12 */3 * *"
 
 name: Check
 
@@ -57,7 +57,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions/upload-artifact@v3
         with:
-          name: VKMS result ${{ matrix.os }}
+          name: VKMS result
           path: enc_result.zip
           if-no-files-found: error
       - name: Clear artifacts
