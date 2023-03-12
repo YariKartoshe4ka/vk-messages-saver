@@ -198,7 +198,7 @@ class Message:
 
     def full_date(self):
         # Возвращает полную дату (день, месяц, год) отправки сообщения
-        return self.date.strftime('%d {} %Y'.format(months[self.date.month]))
+        return self.date.strftime('%d {} %Y').format(months[self.date.month])
 
     def time(self):
         # Возвращает время (час, минута) отправки сообщения
