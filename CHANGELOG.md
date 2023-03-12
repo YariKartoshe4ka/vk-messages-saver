@@ -1,6 +1,9 @@
 # vk-messages-saver | Changelog
 
 ## [Unreleased]
+#### Fixed
+- Исправлен баг с кодировками записываемых файлов (на Windows появляется ошибка *UnicodeEncodeError*)
+- Исправлен баг с локалями месяцов при генерации дат `msg.full_date()`
 
 ## [1.0.0] - 2022-11-05
 #### Added
