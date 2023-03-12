@@ -109,6 +109,10 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
                 func.max(db.Message.date)
             ).one_or_none()
 
+            # Случай, если мы отправили сообщение, но попали в игнор
+            if peer_by_id[peer_id]['peer']['type'] != 'chat':
+                users.collect({'from_id': peer_id}, user_ids, group_ids)
+
             for chunk in messages.download(api, peer_id, nthreads, max_msgs, start_msg_id):
                 msgs = []
 
