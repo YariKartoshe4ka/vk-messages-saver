@@ -9,7 +9,6 @@ name: Stats
 jobs:
   stats-run:
     name: Collect VKMS run statistics
-    needs: [pre-commit, test-run]
     runs-on: ubuntu-latest
     steps:
       - name: Setup Python
