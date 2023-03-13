@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vkms"
-description = "Утилита для сохранения переписок ВКонтакте"
+description = "Utility for saving messages from the VK social network"
 license = { text = "GPL-3.0-only" }
 authors = [
     { name = "Yaroslav Kikel", email = "yaroslav.kikel.06@inbox.ru"}

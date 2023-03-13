@@ -1,6 +1,8 @@
 # vk-messages-saver | Changelog
 
 ## [Unreleased]
+
+## [1.0.1] - 2023-03-13
 #### Fixed
 - Исправлен баг с кодировками записываемых файлов (на Windows появляется ошибка *UnicodeEncodeError*)
 - Исправлен баг с локалями месяцов при генерации дат `msg.full_date()`
@@ -44,7 +46,8 @@ VKMS, больше не поддерживаются. Возможность с�
 - Сохранение вложений переписки (`vkms atch`), мультипоточная загрузка
 - Логгирование всех внутренних событий на разных уровнях (*DEBUG* - *ERROR*)
 
-[Unreleased]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/0.2.0...1.0.0
 [0.2.0]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/YariKartoshe4ka/vk-messages-saver/releases/tag/0.1.0
