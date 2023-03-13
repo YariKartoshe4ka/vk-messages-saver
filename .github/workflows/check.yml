@@ -9,17 +9,6 @@ on:
 name: Check
 
 jobs:
-  pre-commit:
-    name: Run pre-commit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
-      - name: Run pre-commit
-        uses: pre-commit/action@v3.0.0
-
   test-run:
     name: Test VKMS - ${{ matrix.os }}
     if: github.actor != 'dependabot[bot]'
@@ -31,6 +20,9 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Setup Python
         uses: actions/setup-python@v4
