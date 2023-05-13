@@ -22,6 +22,7 @@ def download(api):
     while processed < res['count']:
         res = api.messages.getConversations(offset=processed, count=200)
         peers += [item['conversation'] for item in res['items']]
+        processed += 200
 
     return peers
 

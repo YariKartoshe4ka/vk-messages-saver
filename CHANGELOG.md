@@ -1,6 +1,8 @@
 # vk-messages-saver | Changelog
 
 ## [Unreleased]
+#### Fixed
+- Испрвлен баг с бесконечным циклом в `peers.py` при количестве переписок > 200
 
 ## [1.0.1] - 2023-03-13
 #### Fixed
