@@ -72,6 +72,7 @@ class Peer:
         self.account, self.info = session.query(db.Peer.account, db.Peer.info).one()
 
         usernames = users.parse(session)
+        usernames[0] = self.account
 
         # Парсим все сообщения переписки
         self.msgs = messages.MessagesFactory(session, usernames).parse()
