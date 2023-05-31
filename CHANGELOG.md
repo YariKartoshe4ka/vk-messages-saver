@@ -1,6 +1,8 @@
 # vk-messages-saver | Changelog
 
 ## [Unreleased]
+
+## [1.0.2] - 2023-05-31
 #### Fixed
 - Исправлен баг с бесконечным циклом в `peers.py` при количестве переписок > 200
 - Исправлен баг с обработкой сообщений с идентификатором отправителя 0
@@ -49,7 +51,8 @@ VKMS, больше не поддерживаются. Возможность с�
 - Сохранение вложений переписки (`vkms atch`), мультипоточная загрузка
 - Логгирование всех внутренних событий на разных уровнях (*DEBUG* - *ERROR*)
 
-[Unreleased]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.2...HEAD
+[1.0.2]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/0.2.0...1.0.0
 [0.2.0]: https://github.com/YariKartoshe4ka/vk-messages-saver/compare/0.1.0...0.2.0
