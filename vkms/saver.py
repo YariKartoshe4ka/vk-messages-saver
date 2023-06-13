@@ -191,7 +191,7 @@ def save_html(out_dir, peer):
     base_dir = Path(__file__).parent.resolve()
 
     # Инициализируем шаблонизатор
-    env = Environment(loader=FileSystemLoader(base_dir / 'templates'))
+    env = Environment(loader=FileSystemLoader(base_dir / 'templates'), autoescape=True)
 
     def relpath(path):
         return os.path.relpath(path, start=out_dir / 'dialogs/html')

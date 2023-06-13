@@ -1,6 +1,8 @@
 # vk-messages-saver | Changelog
 
 ## [Unreleased]
+#### Security
+- Исправлен баг с неправильной конвертацией перепсики в HTML (XSS уязвимость)
 
 ## [1.0.2] - 2023-05-31
 #### Fixed
