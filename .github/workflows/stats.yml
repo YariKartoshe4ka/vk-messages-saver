@@ -27,7 +27,7 @@ jobs:
           sqlite3 vkms-result-stats/.sqlite/2000000021.sqlite -batch 'select count() from messages;' > count.txt
           printf 'VKMS_SPEED=%.f\n' $(echo $(<count.txt)'/'$(<time.txt) | bc) >> $GITHUB_ENV
       - name: Update speed badge
-        uses: schneegans/dynamic-badges-action@v1.6.0
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GH_API_TOKEN }}
           gistID: bf106ade592cbea6189b89f71c7545e9
