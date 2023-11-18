@@ -40,18 +40,4 @@ jobs:
           vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f txt
           vkms -i ${{ secrets.VKMS_INCLUDE }} parse -f html
           vkms -i ${{ secrets.VKMS_INCLUDE }} atch
-      - name: Zip artifacts with password
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          zip -r result.zip vkms-result/ 1>/dev/null
-          zip -P '${{ secrets.ZIP_PASSWORD }}' enc_result.zip result.zip
-      - name: Upload artifacts
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: VKMS result
-          path: enc_result.zip
-          if-no-files-found: error
-      - name: Clear artifacts
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: rm -rf vkms-result/ result.zip enc_result.zip
+          rm -rf vkms-result
