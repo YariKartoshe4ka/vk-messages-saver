@@ -318,7 +318,7 @@
       {# Парсим текст сообщения, обрабатывая переносы строк и обращения #}
       {% if msg.text %}
         <p class="msg-text">
-          {{ msg.replace_mention(msg.text.split('\n') | join('<br>'), '<a>\\1</a>') }}
+          {{ msg.text | nl2br | with_mention }}
         </p>
       {% endif %}
 

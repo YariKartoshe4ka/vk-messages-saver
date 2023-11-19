@@ -1,8 +1,10 @@
 import os
+import re
 from io import StringIO
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, pass_eval_context
+from markupsafe import Markup, escape
 from minify_html import minify
 from pathvalidate import sanitize_filename
 
@@ -175,6 +177,41 @@ def _convert_txt_msg(msg, account_id, *, is_reply=False):
     return lines
 
 
+_nl_re = re.compile(r'(\n)')
+_mention_re = re.compile(r'\[[@]?(?:club|id)\d+\|([^\]]+)\]')
+
+
+@pass_eval_context
+def _jinja_filter_nl2br(ctx, value):
+    result = ''.join(
+        p.replace('\n', Markup('<br>'))
+        for p in _nl_re.split(escape(value))
+    )
+
+    if ctx.autoescape:
+        result = Markup(result)
+
+    return result
+
+
+@pass_eval_context
+def _jinja_filter_with_mention(ctx, value):
+    result = ''
+    flag = False
+
+    for p in _mention_re.split(escape(value)):
+        for tag in ('@all', '*all', '@online', '*online'):
+            p = p.replace(tag, Markup(f'<a>{tag}</a>'))
+
+        result += Markup(f'<a>{p}</a>') if flag else p
+        flag = not flag
+
+    if ctx.autoescape:
+        result = Markup(result)
+
+    return result
+
+
 def save_html(out_dir, peer):
     """
     Сохраняет переписку в формате HTML. Верстка написана с нуля и была максимально
@@ -193,10 +230,12 @@ def save_html(out_dir, peer):
     # Инициализируем шаблонизатор
     env = Environment(loader=FileSystemLoader(base_dir / 'templates'), autoescape=True)
 
-    def relpath(path):
+    def _jinja_filter_relpath(path):
         return os.path.relpath(path, start=out_dir / 'dialogs/html')
 
-    env.filters['relpath'] = relpath
+    env.filters['relpath'] = _jinja_filter_relpath
+    env.filters['nl2br'] = _jinja_filter_nl2br
+    env.filters['with_mention'] = _jinja_filter_with_mention
 
     template = env.get_template('peer.html')
 
