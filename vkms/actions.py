@@ -34,6 +34,11 @@ def dump(out_dir, include, exclude, token, nthreads, max_msgs, append, export_js
             sleep(1)
             return self.send(request)
 
+        def on_api_error_9(self, request):
+            log.warning("Flood control. Sleeping for 5s")
+            sleep(5)
+            return self.send(request)
+
         def get_captcha_key(self, request):
             return input(f'Captcha needed ({request.api_error.captcha_img}): ')
 
