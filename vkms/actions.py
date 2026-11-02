@@ -5,9 +5,8 @@ import vk
 from sqlalchemy import func
 from vk.exceptions import VkAPIError
 
-from . import attachments
+from . import attachments, messages, peers, saver, users
 from . import database as db
-from . import messages, peers, saver, users
 
 log = logging.getLogger(__name__)
 
